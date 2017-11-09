@@ -22,9 +22,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </template>
 
   <script>
-    var SIGNUP = 'signup';
-    var PASSWORD = 'password';
-    var GOOGLE = 'https://accounts.google.com';
+    const SIGNUP = 'signup';
+    const PASSWORD = 'password';
+    const GOOGLE = 'https://accounts.google.com';
 
     class ShopAccountData extends Polymer.Element {
 
@@ -44,7 +44,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._initializeProfile();
         gapi.load('auth2', () => {
           gapi.auth2.init().then(() => {
-            this.dispatchEvent(new CustomEvent('account-ready', {
+            this.dispatchEvent(new CustomEvent('account-data-ready', {
               bubbles: true, composed: true
             }));
           })

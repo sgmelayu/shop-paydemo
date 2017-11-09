@@ -20,6 +20,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-meta/iron-meta.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="shop-category-data.html">
+<link rel="import" href="shop-payment-request.html">
 <!-- Since 'home' is the default route, eagerly load it. -->
 <link rel="import" href="shop-home.html">
 
@@ -264,6 +265,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         id="account"
         profile="{{profile}}"></shop-account-data>
 
+    <!--
+      shop-payment-request provides the logic and hooks into the PaymentRequest API.
+    -->
+    <shop-payment-request
+        id="paymentRequest"
+        page="[[page]]"
+        cart="[[cart]]"
+        total="[[total]]"
+        currency="USD"
+        basic-card='["visa", "mastercard", "amex", "discover", "diners", "jcb", "unionpay"]'
+        supported-methods='["https://emerald-eon.appspot.com/alicepay","https://emerald-eon.appspot.com/bobpay"]'
+        pay-with-google='{"merchantId":"02510116604241796260","environment":"TEST","apiVersion":1,"allowedPaymentMethods":["CARD","TOKENIZED_CARD"],"paymentMethodTokenizationParameters": { "tokenizationType":"PAYMENT_GATEWAY", "parameters": {"gateway":"stripe","stripe:publishableKey":"pk_test_fkdoiK6FR5BLZMFNbSGoDjpn","stripe:version":"5.1.0"}},"cardRequirements":{ "allowedCardNetworks":["AMEX","DISCOVER","MASTERCARD","VISA"], "billingAddressRequired":true,"billingAddressFormat":"FULL"}, "phoneNumberRequired":false,"emailRequired":false, "shippingAddressRequired":false}'
+        request-payer-email
+        request-payer-phone
+        request-payer-name
+        shipping-type="delivery">
+    </shop-payment-request>
+
     <app-header role="navigation" id="header" effects="waterfall" condenses reveals>
       <app-toolbar>
         <div class="left-bar-item">
@@ -424,6 +443,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         super.ready();
         // Custom elements polyfill safe way to indicate an element has been upgraded.
         this.removeAttribute('unresolved');
+        this.payment = this.$.paymentRequest;
         // listen for custom events
         this.addEventListener('add-cart-item', (e)=>this._onAddCartItem(e));
         this.addEventListener('set-cart-item', (e)=>this._onSetCartItem(e));
@@ -440,7 +460,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         Polymer.RenderStatus.afterNextRender(this, () => {
           window.addEventListener('online', (e)=>this._notifyNetworkStatus(e));
           window.addEventListener('offline', (e)=>this._notifyNetworkStatus(e));
-          window.addEventListener('account-ready', (e)=>this._autoLogin(e));
+          window.addEventListener('account-data-ready', (e)=>this._autoLogin(e));
         });
       }
 
@@ -600,6 +620,93 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _onClearCart() {
         this.$.cart.clearCart();
         this._announce('Cart cleared');
+      }
+
+      _onBuyItem(event) {
+        // This only works with PaymentRequest
+        let item = event.detail.item;
+        let itemCost = event.detail.quantity * item.price;
+        let itemDetails = [{
+          label: `${item.title} ${event.detail.size} x ${event.detail.quantity}`,
+          amount: {currency: this.payment.currency, value: itemCost.toFixed(2)}
+        }];
+
+        this.payment.buyItems(itemDetails, itemCost)
+        .then(instrument => {
+          return this._processPayment(instrument, false);
+        }).catch(err => {
+          if (err === 'Request cancelled') {
+            // Do nothing
+          } else if (err.name === 'NotSupportedError') {
+            this._redirectToCheckout();
+          } else {
+            console.error(`Error while handling PaymentRequest.show(): ${err}`);
+          }
+        });
+      }
+
+      _onBuyCart(event) {
+        if ('PaymentRequest' in window) {
+          let itemDetails = this.payment._computeItemDetails();
+          let total = itemDetails.reduce((sum,item) => {
+            return sum + parseFloat(item.amount.value);
+          }, 0);
+          this.payment.buyItems(itemDetails, total)
+          .then(instrument => {
+            return this._processPayment(instrument, true);
+          }).catch(err => {
+            if (err === 'Request cancelled') {
+              // Do nothing
+            } else if (err.name === 'NotSupportedError') {
+              this._redirectToCheckout();
+            } else {
+              console.error(`Error while handling PaymentRequest.show(): ${err}`);
+            }
+          });
+        } else {
+          this._redirectToCheckout();
+          return;
+        }
+      }
+
+      _redirectToCheckout() {
+        // prevent reload loop if we're already on /checkout.
+        if (this.route.path !== 'checkout') {
+          this.set('route.path', '/checkout');
+          return;
+        }
+      }
+
+      _processPayment(instrumentResponse, cartBuy) {
+        // This is normally where you'd send instrumentResponse to your backend
+        // or payment processor. For this demo we don't actually do that,
+        // instead mimicking a processing delay with a 2-second timout.
+        //
+        // See the PaymentRequest integration guide for a typical flow:
+        // https://developers.google.com/web/fundamentals/primers/payment-request/
+
+        window.setTimeout(() => {
+          instrumentResponse.complete('success')
+          .then(() => {
+            // Proceed to sign-in if the user is not signed up
+            if (!this.accountData.isSignedIn()) {
+              this.userEmail = instrumentResponse.payerEmail;
+              this.set('route.path', '/account/signup');
+            } else {
+              if (!this._orderSuccessModal) {
+                this._orderSuccessModal = document.createElement('shop-order-success-modal');
+                this.root.appendChild(this._orderSuccessModal);
+              }
+              this._orderSuccessModal.open();
+              this._announce('Order processed successfully!');
+            }
+            if (cartBuy) {
+              this.dispatchEvent(new CustomEvent('clear-cart', {
+                bubbles: true, composed: true
+              }));
+            }
+          });
+        }, 2000);
       }
 
       _autoLogin() {

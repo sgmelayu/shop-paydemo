@@ -177,10 +177,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </template>
 
   <script>
-    var SIGNUP = 'signup';
-    var PASSWORD = 'password';
-    var GOOGLE = 'https://accounts.google.com';
-
     class ShopAccount extends Polymer.Element {
 
       static get is() { return 'shop-account'; }
@@ -238,17 +234,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         _hasAccount: {
-          type: Boolean,
-          computed: '_computeHasAccount(profile.id)'
+          computed: '_computeHasAccount(profile)'
         }
       }}
 
       ready() {
         super.ready();
         if (this.$.account.byKey('account')) {
-          this.accountData = this.$.account.byKey('account');
+          this._accountReady();
         } else {
-          window.addEventListener('account-ready', (e)=>this._accountReady(e));
+          window.addEventListener('account-data-ready', (e)=>this._accountReady(e));
         }
       }
 

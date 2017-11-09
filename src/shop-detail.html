@@ -23,6 +23,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <style include="shop-common-styles shop-button shop-select">
 
+      #buyNow:not([visible]) {
+        display: none;
+      }
+
+      shop-button#buyNow > * {
+        width: 100%;
+      }
+
+      shop-button#addToCart > * {
+        width: 100%;
+        margin-bottom: 4px;
+      }
+
       :host {
         display: block;
       }
@@ -127,6 +140,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           margin: 12px 0 32px;
         }
 
+        #buyNow {
+          right: 0;
+          left: 50%
+        }
+
+        #addToCart[half-size] {
+          right: 50%;
+          left: 0;
+        }
+
+        shop-button[responsive]#buyNow > * {
+          background-color: var(--app-secondary-color);
+        }
       }
 
     </style>
@@ -186,9 +212,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <h2>Description</h2>
           <p id="desc"></p>
         </div>
-        <shop-button responsive>
-          <button on-click="_addToCart" aria-label="Add this item to cart">Add to Cart</button>
-        </shop-button>
+        <div id="buyButtons">
+          <shop-button responsive id="addToCart" half-size$="[[_hasPaymentRequest()]]">
+            <button on-tap="_addToCart" aria-label="Add this item to cart">Add to Cart</button>
+          </shop-button>
+          <shop-button responsive id="buyNow" visible$="[[_hasPaymentRequest()]]">
+            <button on-tap="_buyNow" aria-label="Buy this item now">Buy Now</button>
+          </shop-button>
+        </div>
       </div>
     </div>
 
@@ -279,6 +310,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }}));
       }
 
+      _buyNow() {
+        // This event will be handled by shop-app.
+        this.dispatchEvent(new CustomEvent('buy-item', {
+          bubbles: true, composed: true, detail: {
+            item: this.item,
+            quantity: parseInt(this.$.quantitySelect.value, 10),
+            size: this.$.sizeSelect.value
+          }}));
+      }
+
       _isDefined(item) {
         return item != null;
       }
@@ -293,6 +334,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       }
 
+      _hasPaymentRequest() {
+        return 'PaymentRequest' in window;
+      }
     }
 
     customElements.define(ShopDetail.is, ShopDetail);
