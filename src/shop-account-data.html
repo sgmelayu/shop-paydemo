@@ -199,7 +199,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return this._fetch(SIGNOUT)
         .then(() => {
           if (navigator.credentials) {
-            return navigator.credentials.preventSilentAccess();
+            navigator.credentials.preventSilentAccess();
           }
           this._initializeProfile();
         });
