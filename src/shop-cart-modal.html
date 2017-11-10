@@ -96,7 +96,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <a href="/cart" on-click="close" id="viewCartAnchor">View Cart</a>
       </shop-button>
       <shop-button class="modal-button">
-        <a href="/checkout" on-click="close">Checkout</a>
+        <button on-tap="_buyCart" type="button">Checkout</button>
       </shop-button>
     </div>
 
@@ -136,6 +136,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.classList.remove('opened');
       }
 
+      _buyCart() {
+        this.dispatchEvent(new CustomEvent('buy-cart', {
+          bubbles: true, composed: true
+        }));
+        this.close();
+      }
+
       _onCancel(e) {
         // Don't restore focus when the overlay is closed after a mouse event
         if (e.detail instanceof MouseEvent) {
@@ -149,7 +156,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
         if (this.opened) {
           this._finishRenderOpened();
-          this.fire('announce', 'Item added to the cart');
+          this.dispatchEvent(new CustomEvent('announce', {
+            bubbles: true, composed: true, detail: 'Item added to the cart'
+          }));
         } else {
           this._finishRenderClosed();
           this.backdropElement.style.display = '';

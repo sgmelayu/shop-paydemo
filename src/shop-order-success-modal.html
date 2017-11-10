@@ -153,9 +153,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (this.opened) {
           this._finishRenderOpened();
           this.dispatchEvent(new CustomEvent('announce', {
-            bubbles: true, composed: true, detail: {
-              text: 'Order successful'
-            }
+            bubbles: true, composed: true, detail: 'Order successful'
           }));
         } else {
           this._finishRenderClosed();
