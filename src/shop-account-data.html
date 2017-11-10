@@ -14,23 +14,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="shop-account-data">
 
-  <template>
-    <!--<iron-localstorage
-        name="shop-account-data"
-        value="{{profile}}"
-        on-iron-localstorage-load-empty="_initializeProfile"></iron-localstorage>-->
-  </template>
-
   <script>
-    const SIGNUP = 'signup';
-    const PASSWORD = 'password';
-    const GOOGLE = 'https://accounts.google.com';
+    const SIGNUP = '/register';
+    const SIGNOUT = '/signout';
+    const UNREGISTER = '/unregister';
+    const PASSWORD = '/auth/password';
+    const GOOGLE = '/auth/google';
+    const GOOGLE_FEDERATION = 'https://accounts.google.com'
 
     class ShopAccountData extends Polymer.Element {
 
       static get is() { return 'shop-account-data'; }
 
-      properties() { return {
+      static get properties() { return {
         profile: {
           type: Object,
           value: null,
@@ -82,11 +78,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return navigator.credentials.get({
             password: true,
             federated: {
-              providers: [
-                'https://accounts.google.com'
-              ]
+              providers: [ GOOGLE_FEDERATION ]
             },
-            unmediated: unmediated
+            mediation: unmediated ? 'silent' : 'optional'
           }).then(cred => {
             // Ensure they're not empty
             if (!cred) {
@@ -95,7 +89,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             // TODO: Check creds with the auth backend
             if (cred.type === 'password') {
-              return this._loginWithServer(PASSWORD, cred)
+              let form = new FormData();
+              form.append('email', cred.id);
+              form.append('password', cred.password);
+              return this._fetch(PASSWORD, form)
             } else if (cred.type === 'federated') {
               // This credential must be GOOGLE
               return this.gSignIn(cred.id);
@@ -115,7 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       pSignIn(form) {
-        return this._loginWithServer(PASSWORD, form)
+        return this._fetch(PASSWORD, form)
         .then(profile => {
           this.setProfile(profile);
           if (navigator.credentials) {
@@ -125,14 +122,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               id:       email,
               password: password
             });
-            // Credential stored
-            return navigator.credentials.store(cred);
+            navigator.credentials.store(cred);
          }
+         return Promise.resolve(profile);
        });
       }
 
       pSignUp(form) {
-        return this._loginWithServer(SIGNUP, form)
+        return this._fetch(SIGNUP, form)
         .then(profile => {
           this.setProfile(profile);
           if (navigator.credentials) {
@@ -157,14 +154,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               return Promise.resolve(googleUser);
             }
           }
-          return auth2.signIn({
-            login_hint: id || ''
-          });
+          return auth2.signIn({ login_hint: id || '' });
         })().then(googleUser => {
           let form = new FormData();
           form.append('id_token', googleUser.getAuthResponse().id_token);
-          form.append('csrf_token', Polymer.dom(document).querySelector('#csrf_token').value);
-          return this._loginWithServer(GOOGLE, form);
+          return this._fetch(GOOGLE, form);
         }).then(profile => {
           if (profile) {
             this.setProfile(profile);
@@ -174,7 +168,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 id:       profile.email,
                 name:     profile.name,
                 iconURL:  profile.imageUrl,
-                provider: GOOGLE
+                provider: GOOGLE_FEDERATION
               });
               navigator.credentials.store(cred);
             }
@@ -183,41 +177,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
       }
 
-      _loginWithServer(type, cred) {
-        let opt, path;
-        // Attempting sign in with Server
-        switch (type) {
-          case GOOGLE:
-            path = '/auth/google';
-            break;
-          case SIGNUP:
-            path = '/register';
-            break;
-          default:
-            path = '/auth/password';
-            break;
-        }
-
-        let csrf_token = Polymer.dom(document).querySelector('#csrf_token').value;
-        if (cred instanceof FormData) {
-          cred.append('csrf_token', csrf_token);
-          opt = {
-            method: 'POST',
-            credentials: 'include',
-            body: cred
-          }
-        } else {
-          cred.additionalData = new FormData();
-          cred.additionalData.append('csrf_token', csrf_token);
-          cred.idName = 'email';
-          opt = {
-            method: 'POST',
-            credentials: cred
-          }
-        }
-
-        return fetch(path, opt)
-        .then(res => {
+      _fetch(path, cred = '') {
+        return fetch(path, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: cred
+        }).then(res => {
           if (res.status === 200) {
             // Server authentication succeeded
             return res.json();
@@ -229,11 +197,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       logout() {
-        if (navigator.credentials) {
-          navigator.credentials.requireUserMediation();
-        }
-        this._initializeProfile();
-        return Promise.resolve();
+        return this._fetch(SIGNOUT)
+        .then(() => {
+          if (navigator.credentials) {
+            return navigator.credentials.preventSilentAccess();
+          }
+          this._initializeProfile();
+        });
       }
 
     };
