@@ -1,5 +1,5 @@
 {
-  "entrypoint": "index.html",
+  "entrypoint": "templates/index.html",
   "shell": "src/shop-app.html",
   "fragments": [
     "src/shop-list.html",

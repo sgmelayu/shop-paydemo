@@ -33,8 +33,6 @@ FACEBOOK_APPTOKEN=os.getenv('FACEBOOK_APPTOKEN', None)
 
 app = Flask(
     __name__,
-    static_url_path='',
-    static_folder='static',
     template_folder='templates'
 )
 app.debug = True
@@ -260,6 +258,6 @@ def signout():
 
 
 @app.route('/', defaults={'path': ''})
-@app.route('/<path>')
+@app.route('/<path:path>')
 def index(path):
     return render_template('index.html', client_id=CLIENT_ID)

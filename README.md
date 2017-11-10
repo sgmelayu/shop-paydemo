@@ -5,9 +5,18 @@
 ##### Prerequisites
 
 Install [polymer-cli](https://github.com/Polymer/polymer-cli):
+(Need at least npm v0.3.0)
 
     npm install -g polymer-cli
 
+Install [Google Cloud SDK](https://cloud.google.com/sdk/) to use App Engine.
+
+Create a project in [Google API Console](https://console.developers.google.com/)
+following [these
+steps](https://developers.google.com/identity/sign-in/web/devconsole-project).
+Once it's done:
+* Download `client_secret_****.json`, rename it to `client_secrets.json`
+* Place `client_secrets.json` at root of this project
 
 ##### Setup
     # Using CLI
@@ -18,56 +27,18 @@ Install [polymer-cli](https://github.com/Polymer/polymer-cli):
     # Or cloning direct from GitHub
     git clone https://github.com/Polymer/shop.git
     cd shop
+
+    # Build
     bower install
+    git submodule init
+    git submodule update
+    pip install -t lib -r requirements.txt
+    polymer build
 
 ### Start the development server
 
-    polymer serve
-
-### Run web-component-tester tests
-
-    polymer test
+    dev_appserver.py .
 
 ### Build
 
-Build presets provide an easy way to define common build configurations in your `polymer.json` file. There are 3 build presets we put in `polymer.json` file in Shop:
-
-**es5-bundled**
-
-- js: {minify: true, compile: true}
-- css: {minify: true}
-- html: {minify: true}
-- bundle: true
-- addServiceWorker: true
-- addPushManifest: true
-- insertPrefetchLinks: true
-
-**es6-unbundled**
-
-- js: {minify: true, compile: false}
-- css: {minify: true}
-- html: {minify: true}
-- bundle: false
-- addServiceWorker: true
-- addPushManifest: true
-- insertPrefetchLinks: true
-
-**es6-bundled**
-
-- js: {minify: true, compile: false}
-- css: {minify: true}
-- html: {minify: true}
-- bundle: true
-- addServiceWorker: true
-- addPushManifest: true
-- insertPrefetchLinks: true
-
-Run the command to build the presets:
-
     polymer build
-
-### Test the build
-
-Use `polymer serve` to serve a specific build preset of the app. For example:
-
-    polymer serve build/es5-bundled
