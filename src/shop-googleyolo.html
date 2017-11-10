@@ -1,0 +1,241 @@
+<!--
+@license
+Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-meta/iron-meta.html">
+<script src="https://smartlock.google.com/client" async defer></script>
+
+<dom-module id="shop-googleyolo">
+
+  <script>
+    const SIGNUP = '/register';
+    const SIGNOUT = '/signout';
+    const UNREGISTER = '/unregister';
+    const PASSWORD = '/auth/password';
+    const GOOGLE = '/auth/google';
+    const AUTH_GOOGLE = 'https://accounts.google.com';
+    const AUTH_PASSWORD = 'googleyolo://id-and-password';
+
+    class ShopGoogleyolo extends Polymer.Element {
+
+      static get is() { return 'shop-googleyolo' } 
+
+      static get properties() { return {
+        profile: {
+          type: Object,
+          value: null,
+          notify: true
+        },
+        googleSigninClientId: String
+      }}
+
+      ready() {
+        super.ready();
+        new Polymer.IronMeta({type: 'account', key: 'account', value: this});
+        this._initializeProfile();
+        this.googleSigninClientId = document.querySelector('meta[name="google-signin-client_id"]').content;
+        if (!window.googleyolo) {
+          window.onGoogleYoloLoad = function() {
+            this.dispatchEvent(new CustomEvent('account-data-ready', {
+              bubbles: true, composed: true
+            }));
+          };
+        } else {
+          this.dispatchEvent(new CustomEvent('account-data-ready', {
+            bubbles: true, composed: true
+          }));
+        }
+      }
+
+      isSignedIn() {
+        return !!this.profile.id;
+      }
+
+      setProfile(profile) {
+        // Set profile
+        this.profile = {
+          name:     profile.name,
+          id:       profile.id,
+          iconURL:  profile.imageUrl,
+          email:    profile.email
+        };
+      }
+
+      _initializeProfile() {
+        // Init profile
+        this.profile = {
+          name:     '',
+          id:       '',
+          iconURL:  '',
+          email:    ''
+        };
+      }
+
+      autoSignIn() {
+        return googleyolo.retrieve({
+          supportedAuthMethods: [ AUTH_GOOGLE, AUTH_PASSWORD ],
+          supportedIdTokenProviders: [{
+            uri: AUTH_GOOGLE,
+            clientId: this.googleSigninClientId
+          }]
+        }).then(cred => {
+          if (!cred) {
+            return Promise.reject();
+          }
+          switch (cred.authMethod) {
+            case AUTH_PASSWORD:
+              return this._fetch(PASSWORD, cred)
+            case AUTH_GOOGLE:
+              let form = new FormData();
+              form.append('id_token', cred.idToken);
+              return this._fetch(GOOGLE, form);
+            default:
+              return Promise.reject();
+          }
+        }).then(profile => {
+          if (profile) {
+            this.setProfile(profile);
+            return Promise.resolve(profile);
+          } else {
+            return Promise.resolve();
+          }
+        }).catch(err => {
+          this._initializeProfile();
+          return Promise.reject(err);
+        });
+      }
+
+      signUp() {
+        return googleyolo.hint({
+          supportedAuthMethods: [ AUTH_GOOGLE ],
+          supportedIdTokenProviders: [{
+            uri: AUTH_GOOGLE,
+            clientId: this.googleSigninClientId
+          }],
+          context: 'signUp'
+        }).then(cred => {
+          if (cred.idToken) {
+            let form = new FormData();
+            form.append('id_token', cred.idToken);
+            return this._fetch(GOOGLE, form);
+          } else {
+            return Promise.reject();
+          }
+        }).then(profile => {
+          if (profile) {
+            this.setProfile(profile);
+          }
+          return Promise.resolve(profile);
+        }).catch(err => {
+          this._initializeProfile();
+          return Promise.reject(err);
+        });
+      }
+
+      pSignIn(form) {
+        return this._fetch(PASSWORD, form)
+        .then(profile => {
+          this.setProfile(profile);
+          if (navigator.credentials) {
+            let email = form.get('email');
+            let password = form.get('password');
+            let cred = new PasswordCredential({
+              id:       email,
+              password: password
+            });
+            navigator.credentials.store(cred);
+          }
+          return Promise.resolve(profile);
+        });
+      }
+
+      pSignUp(form) {
+        return this._fetch(SIGNUP, form)
+        .then(profile => {
+          this.setProfile(profile);
+          if (navigator.credentials) {
+            let email = form.get('email');
+            let password = form.get('password');
+            let cred = new PasswordCredential({
+              id:       email,
+              password: password
+            });
+            navigator.credentials.store(cred);
+          }
+          return Promise.resolve(profile);
+        });
+      }
+
+      gSignIn(id) {
+        return (function() {
+          let auth2 = gapi.auth2.getAuthInstance();
+          if (auth2.isSignedIn.get()) {
+            let googleUser = auth2.currentUser.get();
+            if (googleUser.getBasicProfile().getEmail() === id) {
+              return Promise.resolve(googleUser);
+            }
+          }
+          return auth2.signIn({ login_hint: id || '' });
+        })().then(googleUser => {
+          let form = new FormData();
+          form.append('id_token', googleUser.getAuthResponse().id_token);
+          return this._fetch(GOOGLE, form);
+        }).then(profile => {
+          if (profile) {
+            this.setProfile(profile);
+            if (navigator.credentials) {
+              // Signed in with Google Account
+              let cred = new FederatedCredential({
+                id:       profile.email,
+                name:     profile.name,
+                iconURL:  profile.imageUrl,
+                provider: GOOGLE_FEDERATION
+              });
+              navigator.credentials.store(cred);
+            }
+          }
+          return Promise.resolve(profile);
+        });
+      }
+
+      _fetch(path, cred = '') {
+        return fetch(path, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: cred
+        }).then(res => {
+          if (res.status === 200) {
+            // Server authentication succeeded
+            return res.json();
+          } else {
+            // Server authentication failed
+            return Promise.reject('Authentication failed');
+          }
+        });
+      }
+
+      logout() {
+        return this._fetch(SIGNOUT)
+        .then(() => {
+          googleyolo.disableAutoSignIn();
+          this._initializeProfile();
+        });
+      }
+
+    };
+
+    customElements.define(ShopGoogleyolo.is, ShopGoogleyolo);
+
+  </script>
+
+</dom-module>

@@ -261,9 +261,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       shop-account-data maintains the state of the user's account (in
       localstorage). Does not, and should not, store password.
     -->
-    <shop-account-data
+    <shop-googleyolo
         id="account"
-        profile="{{profile}}"></shop-account-data>
+        profile="{{profile}}"></shop-googleyolo>
 
     <!--
       shop-payment-request provides the logic and hooks into the PaymentRequest API.
@@ -303,8 +303,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-icon-button
               src="[[profile.iconURL]]"
               icon="[[_computeProfileIcon(profile)]]"
-              aria-label="Account"
-              on-tap="_onLogin"></paper-icon-button>
+              aria-label="Account"></paper-icon-button>
           </a>
         </div>
         <div class="cart-btn-container">
@@ -718,33 +717,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         }, err => {
           console.log('auto sign-in did not happen');
-        });
-      }
-
-      _onLogin(event) {
-        event.preventDefault();
-        if (this.accountData.isSignedIn()) {
-          this.set('route.path', '/account');
-          return;
-        }
-        this.accountData.autoSignIn(false)
-        .then(profile => {
-          if (profile) {
-            this.dispatchEvent(new CustomEvent('show-snackbar', {
-              bubbles: true, composed: true, detail: {
-                text: 'You are signed in!'
-              }
-            }));
-          } else {
-            this.set('route.path', '/account');
-          }
-        }, err => {
-          this.dispatchEvent(new CustomEvent('show-snackbar', {
-            bubbles: true, composed: true, detail: {
-              text: 'Sign-In failed'
-            }
-          }));
-          this.set('route.path', '/account');
         });
       }
 

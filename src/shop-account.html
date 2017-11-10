@@ -164,9 +164,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <input type="button" on-click="_onSignIn" value="Log In">
           </shop-button>
 
-          <div class="google-signin" on-click="_onGSignIn">
+          <!-- <div class="google-signin" on-click="_onGSignIn">
             <img src="/images/google_signin.png">
-          </div>
+          </div> -->
 
         </form>
       </div>
@@ -250,6 +250,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _accountReady() {
         this.accountData = this.$.account.byKey('account');
+        if (!this.accountData.isSignedIn()) {
+          this.accountData.autoSignIn()
+          .then(profile => {
+            if (profile) {
+              this.dispatchEvent(new CustomEvent('show-snackbar', {
+                bubbles: true, composed: true, detail: {
+                  text: 'You are signed in!'
+                }
+              }));
+            } else {
+              return Promise.reject();
+            }
+          }, err => {
+            if (err.type !== 'userCanceled') {
+              return this.accountData.signUp();
+            }
+          }).then(profile => {
+            if (profile) {
+              this.dispatchEvent(new CustomEvent('show-snackbar', {
+                bubbles: true, composed: true, detail: {
+                  text: 'Thanks for signing up!'
+                }
+              }));
+            } else {
+              return Promise.reject();
+            }
+          }).catch(err => {
+            this.dispatchEvent(new CustomEvent('show-snackbar', {
+              bubbles: true, composed: true, detail: {
+                text: 'Auto sign-in failed'
+              }
+            }));
+          });
+        }
       }
 
       _computeHasAccount(id) {
@@ -375,62 +409,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _willSendRequest(e) {
         this._setWaiting(true);
-      }
-
-      _loginWithFirebase(email, password) {
-        console.log('Attempting sign in with Firebase');
-
-        var passwordElement = this.$.accountPassword;
-
-        return new Promise(function(fulfill, reject) {
-          firebase.auth().signInWithEmailAndPassword(email, password)
-          .then(() => {
-            console.log('Successful sign in');
-
-            var user = firebase.auth().currentUser;
-            if (user != null) {
-              return fulfill(user.email);
-            } else {
-              return fulfill('no user info');
-            }
-          })
-          .catch(error => {
-            console.log('Failed sign in. ' + error.code + ': ' + error.message);
-            if (error.code === 'auth/user-not-found') {
-
-              console.log('Unknown user, trying to sign them up instead.');
-              firebase.auth().createUserWithEmailAndPassword(email, password)
-              .then(response => {
-                var userEmail = firebase.auth().currentUser.email;
-                console.log('Successful signup of ' + userEmail);
-                return fulfill(userEmail);
-              })
-              .catch(error => {
-                this.dispatchEvent(new CustomEvent('announce', {
-                  bubbles: true, composed: true, detail:
-                    passwordElement.nextElementSibling.getAttribute('error-message')
-                }));
-                passwordElement.focus();
-                passwordElement.setAttribute('aria-invalid', 'true');
-                console.error(error.message);
-                return reject(error.message);
-              });
-
-            } else if (error.code === 'auth/wrong-password') {
-              this.dispatchEvent(new CustomEvent('announce', {
-                bubbles: true, composed: true, detail:
-                  passwordElement.nextElementSibling.getAttribute('error-message')
-              }));
-              passwordElement.focus();
-              passwordElement.setAttribute('aria-invalid', 'true');
-              return reject(error.code);
-            } else {
-              console.log('Error signing in with Firebase. ' + error.code + ': ' + error.message);
-              return reject(error.code);
-            }
-          });
-
-        });
       }
 
       _logout(evt) {
