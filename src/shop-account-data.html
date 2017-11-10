@@ -9,7 +9,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-<!--<link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html">-->
 <link rel="import" href="../bower_components/iron-meta/iron-meta.html">
 
 <dom-module id="shop-account-data">
@@ -139,9 +138,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               id:       email,
               password: password
             });
-            // Credential stored
-            return navigator.credentials.store(cred);
+            navigator.credentials.store(cred);
           }
+          return Promise.resolve(profile);
         });
       }
 

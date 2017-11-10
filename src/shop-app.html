@@ -626,7 +626,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         .then(instrument => {
           return this._processPayment(instrument, false);
         }).catch(err => {
-          if (err === 'Request cancelled') {
+          if (err.name === 'AbortError') {
             // Do nothing
           } else if (err.name === 'NotSupportedError') {
             this._redirectToCheckout();
@@ -646,7 +646,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .then(instrument => {
             return this._processPayment(instrument, true);
           }).catch(err => {
-            if (err === 'Request cancelled') {
+            if (err.name === 'AbortError') {
               // Do nothing
             } else if (err.name === 'NotSupportedError') {
               this._redirectToCheckout();

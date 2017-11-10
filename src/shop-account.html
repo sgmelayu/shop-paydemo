@@ -116,7 +116,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       </div>
 
       <div class="subsection welcome" visible$="[[_hasAccount]]">
-        <span>Welcome to Polymer Shop, {{profile.email::change}}!</span>
+        <span>Welcome to Polymer Shop, {{profile.email}}!</span>
 
         <div class="logout-section">
           <shop-button responsive id="logoutButton">
@@ -235,7 +235,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         _hasAccount: {
-          computed: '_computeHasAccount(profile)'
+          computed: '_computeHasAccount(profile.id)'
         }
       }}
 
