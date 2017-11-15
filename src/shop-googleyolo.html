@@ -89,11 +89,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (!cred) {
             return Promise.reject();
           }
+          let form;
           switch (cred.authMethod) {
             case AUTH_PASSWORD:
-              return this._fetch(PASSWORD, cred)
+              form = new FormData();
+              form.append('email', cred.id);
+              form.append('password', cred.password);
+              return this._fetch(PASSWORD, form)
             case AUTH_GOOGLE:
-              let form = new FormData();
+              form = new FormData();
               form.append('id_token', cred.idToken);
               return this._fetch(GOOGLE, form);
             default:
