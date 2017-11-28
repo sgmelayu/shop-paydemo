@@ -302,7 +302,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         evt.preventDefault();
         this._setWaiting(true);
 
-        this.$.loginForm.fire('iron-form-presubmit', null, { bubbles: false });
+        this.$.loginForm.dispatchEvent(new CustomEvent('iron-form-presubmit',  {
+          bubbles: false, composed: true });
 
         var form = new FormData(this.$.loginForm);
 
@@ -335,7 +336,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         evt.preventDefault();
         this._setWaiting(true);
 
-        this.$.loginForm.fire('iron-form-presubmit', null, { bubbles: false });
+        this.$.loginForm.dispatchEvent(new CustomEvent('iron-form-presubmit',  {
+          bubbles: false, composed: true });
 
         var form = new FormData(this.$.loginForm);
 
