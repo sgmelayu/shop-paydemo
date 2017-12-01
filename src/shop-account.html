@@ -280,6 +280,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.accountData = this.$.account.byKey('account');
         if (thisPage && this.accountData && !this.accountData.isSignedIn()) {
           this._offerSignUp();
+          this._yoloDismissed = false;
         } else if (!thisPage) {
           this.accountData.dismissYoloDialog(); 
         }
