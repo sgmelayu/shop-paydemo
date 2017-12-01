@@ -134,10 +134,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="row input-row">
             <shop-input>
               <input type="email" id="accountEmail" name="email"
+                  on-focus="_dismissYolo"
                   placeholder="Email" required
                   aria-labelledby="accountEmailLabel"
-                  autocomplete="username" value$="[[prefilledEmail]]"
-                  autofocus$="[[!_computeFocusOnPW(route, prefilledEmail)]]">
+                  autocomplete="username" value$="[[prefilledEmail]]">
               <shop-md-decorator error-message="Invalid Email" aria-hidden="true">
                 <label id="accountEmailLabel">Email</label>
                 <shop-underline></shop-underline>
@@ -148,6 +148,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <div class="row input-row">
             <shop-input>
               <input type="password" id="accountPassword" name="password"
+                  on-focus="_dismissYolo"
                   placeholder="Password" required
                   aria-labelledby="accountPasswordLabel"
                   autocomplete="current-password">
@@ -163,9 +164,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <input type="button" on-click="_onSignIn" value="Log In">
           </shop-button>
 
-          <!-- <div class="google-signin" on-click="_onGSignIn">
+          <div class="google-signin" on-click="_onGSignIn" hidden="[[!_yoloDismissed]]">
             <img src="/images/google_signin.png">
-          </div> -->
+          </div>
 
         </form>
       </div>
@@ -233,6 +234,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           reflectToAttribute: true
         },
 
+        selected: {
+          type: Boolean,
+          reflectToAttribute: true,
+          observer: '_pageChanged'
+        },
+
+        _yoloDismissed: {
+          type: Boolean,
+          value: true
+        },
+
         _hasAccount: {
           computed: '_computeHasAccount(profile.id)'
         }
@@ -249,49 +261,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _accountReady() {
         this.accountData = this.$.account.byKey('account');
-        if (!this.accountData.isSignedIn()) {
-          this.accountData.autoSignIn()
-          .then(profile => {
-            if (profile) {
-              this.dispatchEvent(new CustomEvent('show-snackbar', {
-                bubbles: true, composed: true, detail: {
-                  text: 'You are signed in!'
-                }
-              }));
-            } else {
-              return Promise.reject();
-            }
-          }, err => {
-            if (err.type !== 'userCanceled') {
-              return this.accountData.signUp();
-            }
-          }).then(profile => {
-            if (profile) {
-              this.dispatchEvent(new CustomEvent('show-snackbar', {
-                bubbles: true, composed: true, detail: {
-                  text: 'Thanks for signing up!'
-                }
-              }));
-            } else {
-              return Promise.reject();
-            }
-          }).catch(err => {
-            this.dispatchEvent(new CustomEvent('show-snackbar', {
-              bubbles: true, composed: true, detail: {
-                text: 'Auto sign-in failed'
-              }
-            }));
-          });
+        this.accountData.addEventListener('googleyolo-displayed', e => {
+          this._yoloDismissed = false;
+        });
+        this.accountData.addEventListener('googleyolo-failed', e => {
+          if (e.detail.type === 'signin' &&
+              e.detail.error.type === 'noCredentialsAvailable') {
+            this._offerSignUp();
+          }
+          if (e.detail.error.type === 'userCanceled' ||
+              e.detail.error.type === 'operationCanceled') {
+            this._yoloDismissed = true;
+          }
+        });
+      }
+
+      _pageChanged(thisPage) {
+        this.accountData = this.$.account.byKey('account');
+        if (thisPage && this.accountData && !this.accountData.isSignedIn()) {
+          this._offerSignUp();
+        } else if (!thisPage) {
+          this.accountData.dismissYoloDialog(); 
         }
       }
 
+      _offerSignUp() {
+        return this.accountData.signUp()
+        .then(profile => {
+          if (profile) {
+            this.dispatchEvent(new CustomEvent('show-snackbar', {
+              bubbles: true, composed: true, detail: {
+                text: 'Thanks for signing up!'
+              }
+            }));
+          } else {
+            return Promise.reject('no accounts obtained.');
+          }
+        }).catch(err => {
+          console.info(err.message);
+        });
+      }
+
       _computeHasAccount(id) {
-        console.log('checking has account');
         if (id !== undefined && id != '') {
-          console.log('got one!');
           return true;
         } else {
-          console.log('no dice :(');
           return false;
         }
       }
@@ -417,6 +431,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.dispatchEvent(new CustomEvent('logout', {
           bubbles: true, composed: true
         }));
+      }
+
+      _dismissYolo() {
+        this.accountData.dismissYoloDialog();
       }
 
       _visibleChanged(visible) {

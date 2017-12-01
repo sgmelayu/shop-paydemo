@@ -41,17 +41,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         new Polymer.IronMeta({type: 'account', key: 'account', value: this});
         this._initializeProfile();
         this.googleSigninClientId = document.querySelector('meta[name="google-signin-client_id"]').content;
-        if (!window.googleyolo) {
-          window.onGoogleYoloLoad = function() {
+        gapi.load('auth2', () => {
+          gapi.auth2.init().then(() => {
             this.dispatchEvent(new CustomEvent('account-data-ready', {
               bubbles: true, composed: true
             }));
-          };
-        } else {
-          this.dispatchEvent(new CustomEvent('account-data-ready', {
-            bubbles: true, composed: true
-          }));
-        }
+          })
+        });
       }
 
       isSignedIn() {
@@ -79,6 +75,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       autoSignIn() {
+        this.dispatchEvent(new CustomEvent('googleyolo-displayed', {
+          bubbles: true, composed: true
+        }));
         return googleyolo.retrieve({
           supportedAuthMethods: [ AUTH_GOOGLE, AUTH_PASSWORD ],
           supportedIdTokenProviders: [{
@@ -111,12 +110,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             return Promise.resolve();
           }
         }).catch(err => {
+          this.dispatchEvent(new CustomEvent('googleyolo-failed', {
+            bubbles: true, composed: true, detail: {
+              type: 'signin',
+              error: err
+            }
+          }));
           this._initializeProfile();
           return Promise.reject(err);
         });
       }
 
       signUp() {
+        this.dispatchEvent(new CustomEvent('googleyolo-displayed', {
+          bubbles: true, composed: true
+        }));
         return googleyolo.hint({
           supportedAuthMethods: [ AUTH_GOOGLE ],
           supportedIdTokenProviders: [{
@@ -138,6 +146,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
           return Promise.resolve(profile);
         }).catch(err => {
+          this.dispatchEvent(new CustomEvent('googleyolo-failed', {
+            bubbles: true, composed: true, detail: {
+              type: 'signup',
+              error: err
+            }
+          }));
           this._initializeProfile();
           return Promise.reject(err);
         });
@@ -200,7 +214,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 id:       profile.email,
                 name:     profile.name,
                 iconURL:  profile.imageUrl,
-                provider: GOOGLE_FEDERATION
+                provider: AUTH_GOOGLE
               });
               navigator.credentials.store(cred);
             }
@@ -226,6 +240,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             return Promise.reject('Authentication failed');
           }
         });
+      }
+
+      dismissYoloDialog() {
+        googleyolo.cancelLastOperation();
       }
 
       logout() {
