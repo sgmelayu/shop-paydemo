@@ -164,7 +164,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <input type="button" on-click="_onSignIn" value="Log In">
           </shop-button>
 
-          <div class="google-signin" on-click="_onGSignIn" hidden="[[!_yoloDismissed]]">
+          <div class="google-signin" on-click="_onGSignIn">
             <img src="/images/google_signin.png">
           </div>
 
@@ -240,11 +240,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           observer: '_pageChanged'
         },
 
-        _yoloDismissed: {
-          type: Boolean,
-          value: true
-        },
-
         _hasAccount: {
           computed: '_computeHasAccount(profile.id)'
         }
@@ -261,17 +256,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _accountReady() {
         this.accountData = this.$.account.byKey('account');
-        this.accountData.addEventListener('googleyolo-displayed', e => {
-          this._yoloDismissed = false;
-        });
         this.accountData.addEventListener('googleyolo-failed', e => {
           if (e.detail.type === 'signin' &&
               e.detail.error.type === 'noCredentialsAvailable') {
             this._offerSignUp();
-          }
-          if (e.detail.error.type === 'userCanceled' ||
-              e.detail.error.type === 'operationCanceled') {
-            this._yoloDismissed = true;
           }
         });
       }
@@ -280,7 +268,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.accountData = this.$.account.byKey('account');
         if (thisPage && this.accountData && !this.accountData.isSignedIn()) {
           this._offerSignUp();
-          this._yoloDismissed = false;
         } else if (!thisPage) {
           this.accountData.dismissYoloDialog(); 
         }
