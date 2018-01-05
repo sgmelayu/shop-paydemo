@@ -9,6 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="shop-payment-method.html">
 
 <dom-module id="shop-payment-request">
   <script>
@@ -69,8 +70,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           value: "Total"
         },
 
-        _paymentTypesSupported: {
-          computed: '_computePaymentTypesSupported(basicCard, supportedMethods, payWithGoogle)'
+        paymentMethods: {
+          computed: '_computePaymentMethods()'
         }
       }}
 
@@ -91,7 +92,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           shippingType:       this.shippingType
         };
 
-        let request = new PaymentRequest(this._paymentTypesSupported, details, options);
+        let request = new PaymentRequest(this.paymentMethods, details, options);
 
         // Handle changing shipping options
         request.addEventListener('shippingoptionchange', e => {
@@ -202,33 +203,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           details.displayItems.splice(details.displayItems.length, 0, newShippingOption);
       }
 
-      _computePaymentTypesSupported(basicCards, supportedMethods, payWithGoogle) {
-        let paymentTypes = [];
-
-        if (basicCards.length > 0) {
-          paymentTypes.push({
-            supportedMethods: 'basic-card',
-            data: {
-              supportedNetworks: basicCards
-            }
-          });
+      _computePaymentMethods() {
+        let methods = [];
+        let nodes = this.querySelectorAll('shop-payment-method');
+        for (let paymentMethods of nodes) {
+          methods.push(paymentMethods.getMethod());
         }
-
-        if (supportedMethods.length > 0) {
-          paymentTypes.push({
-            supportedMethods: supportedMethods
-          });
-        }
-
-        if (payWithGoogle && payWithGoogle != {}) {
-          paymentTypes.push({
-            supportedMethods: 'https://google.com/pay',
-            data: payWithGoogle
-          });
-        }
-
-        return paymentTypes;
+console.log(methods);
+        return methods;
       }
+
+      // _computePaymentTypesSupported(basicCards, supportedMethods, payWithGoogle) {
+      //   let paymentTypes = [];
+
+      //   if (basicCards.length > 0) {
+      //     paymentTypes.push({
+      //       supportedMethods: 'basic-card',
+      //       data: {
+      //         supportedNetworks: basicCards
+      //       }
+      //     });
+      //   }
+
+      //   if (supportedMethods.length > 0) {
+      //     paymentTypes.push({
+      //       supportedMethods: supportedMethods
+      //     });
+      //   }
+
+      //   if (payWithGoogle && payWithGoogle != {}) {
+      //     paymentTypes.push({
+      //       supportedMethods: 'https://google.com/pay',
+      //       data: payWithGoogle
+      //     });
+      //   }
+
+      //   return paymentTypes;
+      // }
 
       _computeItemDetails() {
         let items = [];
