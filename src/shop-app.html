@@ -460,6 +460,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.addEventListener('buy-item', (e)=>this._onBuyItem(e));
         this.addEventListener('buy-cart', (e)=>this._onBuyCart(e));
         this.addEventListener('buy-google', (e)=>this._onBuyGoogle(e));
+        this.addEventListener('process-payment', (e)=>this._processPayment(e));
         this.addEventListener('logout', (e)=>this._onLogout(e));
         // listen for online/offline
         Polymer.RenderStatus.afterNextRender(this, () => {
@@ -684,7 +685,8 @@ console.error(err);
             console.error('There\'s a configuration error');
             // Do nothing
           } else if (err.statusCode === 'CANCELED') {
-            this._redirectToCheckout();
+            this._announce('Failed to run Google Pay. Paying with a credit card instead');
+            this.set('route.path', '/checkout/credit-card');
           }
         });
       }
@@ -706,26 +708,26 @@ console.error(err);
         // https://developers.google.com/web/fundamentals/primers/payment-request/
 
         window.setTimeout(() => {
-          instrumentResponse.complete('success')
-          .then(() => {
-            // Proceed to sign-in if the user is not signed up
-            if (!this.accountData.isSignedIn()) {
-              this.userEmail = instrumentResponse.payerEmail;
-              this.set('route.path', '/account/signup');
-            } else {
-              if (!this._orderSuccessModal) {
-                this._orderSuccessModal = document.createElement('shop-order-success-modal');
-                this.root.appendChild(this._orderSuccessModal);
-              }
-              this._orderSuccessModal.open();
-              this._announce('Order processed successfully!');
+          if (instrumentResponse.complete) {
+            instrumentResponse.complete('success')
+          }
+          if (cartBuy) {
+            this.dispatchEvent(new CustomEvent('clear-cart', {
+              bubbles: true, composed: true
+            }));
+          }
+          // Proceed to sign-in if the user is not signed up
+          if (!this.accountData.isSignedIn()) {
+            this.userEmail = instrumentResponse.payerEmail;
+            this.set('route.path', '/account/signup');
+          } else {
+            if (!this._orderSuccessModal) {
+              this._orderSuccessModal = document.createElement('shop-order-success-modal');
+              this.root.appendChild(this._orderSuccessModal);
             }
-            if (cartBuy) {
-              this.dispatchEvent(new CustomEvent('clear-cart', {
-                bubbles: true, composed: true
-              }));
-            }
-          });
+            this._orderSuccessModal.open();
+            this._announce('Order processed successfully!');
+          }
         }, 2000);
       }
 

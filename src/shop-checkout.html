@@ -99,6 +99,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 30px 0;
       }
 
+      .proceed-box {
+        text-align: right;
+      }
+
+      .pay-with-google > img {
+        cursor: pointer;
+        max-width: 200px;
+        @apply --layout-center-justified;
+      }
+
       @media (max-width: 767px) {
 
         .grid {
@@ -116,11 +126,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <div class="main-frame">
       <iron-pages id="pages" selected="[[state]]" attr-for-selected="state">
-        <div state="init">
-          <iron-form id="checkoutForm"
+        <div state="address">
+          <iron-form id="addressForm"
               on-iron-form-response="_didReceiveResponse"
               on-iron-form-presubmit="_willSendRequest">
-            <form method="post" action="data/sample_success_response.json" enctype="application/x-www-form-urlencoded">
+            <form method="post" action="data/sample_success_response.json"
+                enctype="application/x-www-form-urlencoded">
 
               <div class="subsection" visible$="[[!_hasItems]]">
                 <p class="empty-cart">Your <iron-icon icon="shopping-cart"></iron-icon> is empty.</p>
@@ -136,8 +147,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   <h2 id="accountInfoHeading">Account Information</h2>
                   <div class="row input-row">
                     <shop-input>
+                      <input type="text" id="accountName" name="accountName"
+                          placeholder="Your Name" autofocus required
+                          autocomplete="home name"
+                          aria-labelledby="accountNameLabel accountInfoHeading">
+                      <shop-md-decorator error-message="Invalid Name" aria-hidden="true">
+                        <label id="accountNameLabel">Name</label>
+                        <shop-underline></shop-underline>
+                      </shop-md-decorator>
+                    </shop-input>
+                  </div>
+                  <div class="row input-row">
+                    <shop-input>
                       <input type="email" id="accountEmail" name="accountEmail"
-                          placeholder="Email" autofocus required
+                          placeholder="Email" required
+                          autocomplete="home email"
                           aria-labelledby="accountEmailLabel accountInfoHeading">
                       <shop-md-decorator error-message="Invalid Email" aria-hidden="true">
                         <label id="accountEmailLabel">Email</label>
@@ -149,6 +173,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <shop-input>
                       <input type="tel" id="accountPhone" name="accountPhone" pattern="\d{10,}"
                           placeholder="Phone Number" required
+                          autocomplete="home tel"
                           aria-labelledby="accountPhoneLabel accountInfoHeading">
                       <shop-md-decorator error-message="Invalid Phone Number" aria-hidden="true">
                         <label id="accountPhoneLabel">Phone Number</label>
@@ -161,6 +186,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <shop-input>
                       <input type="text" id="shipAddress" name="shipAddress" pattern=".{5,}"
                           placeholder="Address" required
+                          autocomplete="home street-address"
                           aria-labelledby="shipAddressLabel shipAddressHeading">
                       <shop-md-decorator error-message="Invalid Address" aria-hidden="true">
                         <label id="shipAddressLabel">Address</label>
@@ -172,6 +198,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <shop-input>
                       <input type="text" id="shipCity" name="shipCity" pattern=".{2,}"
                           placeholder="City" required
+                          autocomplete="home address-level2"
                           aria-labelledby="shipCityLabel shipAddressHeading">
                       <shop-md-decorator error-message="Invalid City" aria-hidden="true">
                         <label id="shipCityLabel">City</label>
@@ -183,6 +210,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <shop-input>
                       <input type="text" id="shipState" name="shipState" pattern=".{2,}"
                           placeholder="State/Province" required
+                          autocomplete="home address-level1"
                           aria-labelledby="shipStateLabel shipAddressHeading">
                       <shop-md-decorator error-message="Invalid State/Province" aria-hidden="true">
                         <label id="shipStateLabel">State/Province</label>
@@ -192,6 +220,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <shop-input>
                       <input type="text" id="shipZip" name="shipZip" pattern=".{4,}"
                           placeholder="Zip/Postal Code" required
+                          autocomplete="home postal-code"
                           aria-labelledby="shipZipLabel shipAddressHeading">
                       <shop-md-decorator error-message="Invalid Zip/Postal Code" aria-hidden="true">
                         <label id="shipZipLabel">Zip/Postal Code</label>
@@ -203,6 +232,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <label id="shipCountryLabel" class="shop-select-label">Country</label>
                     <shop-select>
                       <select id="shipCountry" name="shipCountry" required
+                          autocomplete="home country"
                           aria-labelledby="shipCountryLabel shipAddressHeading">
                         <option value="US" selected>United States</option>
                         <option value="CA">Canada</option>
@@ -283,8 +313,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       </shop-select>
                     </div>
                   </div>
+                  <div class="row input-row proceed-box">
+                    <shop-button responsive id="submitBox">
+                      <input type="button" on-click="_proceed" value="Proceed to Payment">
+                    </shop-button>
+                  </div>
                 </section>
 
+              </div>
+            </form>
+          </iron-form>
+        </div>
+
+        <div state="credit-card">
+          <iron-form id="creditCardForm"
+              on-iron-form-response="_didReceiveCreditCard"
+              on-iron-form-presubmit="_willSendCreditCard">
+            <form method="post" action="data/sample_success_response.json"
+                enctype="application/x-www-form-urlencoded">
+              <div>
                 <section>
                   <h2>Payment Method</h2>
                   <div class="row input-row">
@@ -375,13 +422,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <div class="flex">Total</div>
                     <div>[[_formatPrice(total)]]</div>
                   </div>
-                  <shop-button responsive id="submitBox">
-                    <input type="button" on-click="_submit" value="Place Order">
-                  </shop-button>
+                  <div class="proceed-box">
+                    <shop-button responsive id="submitBox">
+                      <input type="button" on-click="_creditCardSubmit" value="Place Order">
+                    </shop-button>
+                  </div>
                 </section>
               </div>
             </form>
           </iron-form>
+        </div>
+
+        <div state="google-pay">
+          <section>
+            <h2>Order Summary</h2>
+            <dom-repeat items="[[cart]]" as="entry">
+              <template>
+                <div class="row order-summary-row">
+                  <div class="flex">[[entry.item.title]]</div>
+                  <div>[[_getEntryTotal(entry)]]</div>
+                </div>
+              </template>
+            </dom-repeat>
+            <div class="row total-row">
+              <div class="flex">Total</div>
+              <div>[[_formatPrice(total)]]</div>
+            </div>
+            <div class="pay-with-google proceed-box" on-tap="_googlePaySubmit">
+              <image src="/images/pay_with_google.png" />
+            </div>
+          </section>
         </div>
 
         <!-- Success message UI -->
@@ -443,11 +513,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         /**
          * The state of the form. Valid values are:
-         * `init`, `success` and `error`.
+         * `address`, `credit-card`, `google-pay`, `success` and `error`.
          */
         state: {
           type: String,
-          value: 'init'
+          value: 'address'
         },
 
         /**
@@ -499,28 +569,84 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         '_updateState(routeActive, routeData)'
       ]}
 
-      _submit(e) {
-        if (this._validateForm()) {
-          // To send the form data to the server:
-          // 2) Remove the code below.
-          // 3) Uncomment `this.$.checkoutForm.submit()`.
-
-          this.$.checkoutForm.dispatchEvent(new CustomEvent('iron-form-presubmit', {
-            composed: true}));
-
-          this._submitFormDebouncer = Polymer.Debouncer.debounce(this._submitFormDebouncer,
-            Polymer.Async.timeOut.after(1000), () => {
-              this.$.checkoutForm.dispatchEvent(new CustomEvent('iron-form-response', {
-                composed: true, detail: {
-                  response: {
-                    success: 1,
-                    successMessage: 'Demo checkout process complete.'
-                  }
-                }}));
-            });
-
-          // this.$.checkoutForm.submit();
+      _proceed(e) {
+        let form = this.$.addressForm.querySelector('form');
+        if (this._validateForm(form)) {
+          if (window.PaymentRequest) {
+          // if (false) {
+            this._pushState('google-pay');
+          } else {
+            this._pushState('credit-card');
+          }
         }
+      }
+
+      _creditCardSubmit(e) {
+        let creditCardForm = this.$.creditCardForm.querySelector('form');
+        if (this._validateForm(creditCardForm)) {
+          let address = new FormData(this.$.addressForm.querySelector('form'));
+          let creditCard = new FormData(creditCardForm);
+
+          let paymentResponse = {
+            details: {
+              billingAddress: {
+                addressLine: [
+                  address.get('billAddress')
+                ],
+                city: address.get('billCity'),
+                country: address.get('billCountry'),
+                dependentLocality: '',
+                languageCode: 'en',
+                organization: '',
+                phone: address.get('accountPhone'),
+                postalCode: address.get('billZip'),
+                recipient: address.get('accountName'),
+                region: address.get('billState'),
+                sortingCode: ''
+              },
+              cardNumber: creditCard.get('ccNumber'),
+              cardholderName: creditCard.get('ccName'),
+              cardSecurityCode: creditCard.get('ccCVV'),
+              expiryMonth: creditCard.get('ccExpMonth'),
+              expiryYear: creditCard.get('ccExpYear')
+            },
+            shippingAddress: {
+              addressLine: [
+                address.get('shipAddress')
+              ],
+              city: address.get('shipCity'),
+              country: address.get('shipCountry'),
+              dependentLocality: '',
+              languageCode: 'en',
+              organization: '',
+              phone: address.get('accountPhone'),
+              postalCode: address.get('shipZip'),
+              recipient: address.get('accountName'),
+              region: address.get('shipState'),
+              sortingCode: ''
+            },
+            shippingOption: '',
+            payerName: address.get('accountName'),
+            payerEmail: address.get('accountEmail'),
+            payerPhone: address.get('accountPhone')
+          }
+
+          this._reset();
+          this._setWaiting(true);
+          this.dispatchEvent(new CustomEvent('process-payment', {
+            bubbles: true, composed: true, detail: {
+              paymentResponse: paymentResponse,
+              cartBuy: true
+            }
+          }));
+        }
+      }
+
+      _googlePaySubmit(e) {
+        this._setWaiting(true);
+        this.dispatchEvent(new CustomEvent('buy-google', {
+          bubbles: true, composed: true
+        }));
       }
 
       /**
@@ -545,25 +671,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             return;
           }
         }
-        this.state = 'init';
+        this.state = 'address';
       }
 
       /**
        * Sets the initial state.
        */
       _reset() {
-        let form = this.$.checkoutForm;
+        let form = this.$.addressForm.querySelector('form');
 
         this._setWaiting(false);
         form.reset();
 
-        let nativeForm = form._form;
-        if (!nativeForm) {
-          return;
-        }
-
         // Remove the `aria-invalid` attribute from the form inputs.
-        for (let el, i = 0; el = nativeForm.elements[i], i < nativeForm.elements.length; i++) {
+        for (let el of form.elements) {
           el.removeAttribute('aria-invalid');
         }
       }
@@ -572,12 +693,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
        * Validates the form's inputs and adds the `aria-invalid` attribute to the inputs
        * that don't match the pattern specified in the markup.
        */
-      _validateForm() {
-        let form = this.$.checkoutForm;
+      _validateForm(form) {
         let firstInvalid = false;
-        let nativeForm = form._form;
 
-        for (let el, i = 0; el = nativeForm.elements[i], i < nativeForm.elements.length; i++) {
+        for (let el of form.elements) {
           if (el.checkValidity()) {
             el.removeAttribute('aria-invalid');
           } else {
@@ -670,6 +789,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (!visible) {
           return;
         }
+        this._pushState('address');
         // Reset the UI states
         this._reset();
         // Notify the page's title
