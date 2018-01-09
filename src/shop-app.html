@@ -272,7 +272,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <shop-payment-request
         id="paymentRequest"
         page="[[page]]"
-        cart="[[cart]]"
         total="[[total]]"
         currency="USD"
         request-payer-email
@@ -460,6 +459,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.addEventListener('show-snackbar', (e)=>this._showSnackbar(e));
         this.addEventListener('buy-item', (e)=>this._onBuyItem(e));
         this.addEventListener('buy-cart', (e)=>this._onBuyCart(e));
+        this.addEventListener('buy-google', (e)=>this._onBuyGoogle(e));
         this.addEventListener('logout', (e)=>this._onLogout(e));
         // listen for online/offline
         Polymer.RenderStatus.afterNextRender(this, () => {
@@ -632,35 +632,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _onBuyItem(event) {
-        // This only works with PaymentRequest
-        let item = event.detail.item;
-        let itemCost = event.detail.quantity * item.price;
-        let itemDetails = [{
-          label: `${item.title} ${event.detail.size} x ${event.detail.quantity}`,
-          amount: {currency: this.payment.currency, value: itemCost.toFixed(2)}
-        }];
-
-        this.payment.buyItems(itemDetails, itemCost)
-        .then(instrument => {
-          return this._processPayment(instrument, false);
-        }).catch(err => {
-          if (err.name === 'AbortError') {
-            // Do nothing
-          } else if (err.name === 'NotSupportedError') {
-            this._redirectToCheckout();
-          } else {
-            console.error(`Error while handling PaymentRequest.show(): ${err}`);
-          }
-        });
+        if ('PaymentRequest' in window) {
+          let displayItems = this._getDisplayItemsFromItem(event.detail);
+          this.payment.show(displayItems)
+          .then(instrument => {
+            return this._processPayment(instrument, false);
+          }).catch(err => {
+            if (err.name === 'AbortError') {
+              // Do nothing
+            } else if (err.name === 'NotSupportedError') {
+              this._redirectToCheckout();
+            } else {
+              console.error(`Error while handling PaymentRequest.show(): ${err}`);
+            }
+          });
+        } else {
+          this._redirectToCheckout();
+          return;
+        }
       }
 
-      _onBuyCart(event) {
+      _onBuyCart() {
         if ('PaymentRequest' in window) {
-          let itemDetails = this.payment._computeItemDetails();
-          let total = itemDetails.reduce((sum,item) => {
-            return sum + parseFloat(item.amount.value);
-          }, 0);
-          this.payment.buyItems(itemDetails, total)
+          let displayItems = this._getDisplayItemsFromCart();
+          this.payment.show(displayItems)
           .then(instrument => {
             return this._processPayment(instrument, true);
           }).catch(err => {
@@ -676,6 +671,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this._redirectToCheckout();
           return;
         }
+      }
+
+      _onBuyGoogle() {
+        let displayItems = this._getDisplayItemsFromCart();
+        this.payment.payWithGoogle(displayItems)
+        .then(instrument => {
+          return this._processPayment(instrument, true);
+        }).catch(err => {
+console.error(err);
+          if (err.statusCode === 'DEVELOPER_ERROR') {
+            console.error('There\'s a configuration error');
+            // Do nothing
+          } else if (err.statusCode === 'CANCELED') {
+            this._redirectToCheckout();
+          }
+        });
       }
 
       _redirectToCheckout() {
@@ -792,6 +803,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _computePluralizedQuantity(quantity) {
         return quantity + ' ' + (quantity === 1 ? 'item' : 'items');
+      }
+
+      _getDisplayItemsFromItem(detail) {
+        let itemCost = detail.quantity * detail.item.price;
+        let displayItems = [{
+          label: `${detail.item.title} ${detail.size} x ${detail.quantity}`,
+          amount: {currency: this.payment.currency, value: itemCost.toFixed(2)}
+        }];
+
+        return displayItems;
+      }
+
+      _getDisplayItemsFromCart() {
+        let displayItems = [];
+
+        for (let entry of this.cart) {
+          let itemCost = entry.quantity * entry.item.price;
+          displayItems.push({
+            label: `${entry.item.title} ${entry.size} x ${entry.quantity}`,
+            amount: {currency: this.payment.currency, value: itemCost.toFixed(2)}
+          });
+        }
+
+        return displayItems;
       }
 
       _computeProfileIcon(profile) {

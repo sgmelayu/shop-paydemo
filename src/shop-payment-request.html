@@ -10,6 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="shop-payment-method.html">
+<script src="https://payments.developers.google.com/js/apis/pay.js"></script>
 
 <dom-module id="shop-payment-request">
   <script>
@@ -21,18 +22,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       static get properties() { return {
         page: String,
 
-        cart: Array,
-
         total: Number,
 
         currency: {
           type: String,
           value: "USD"
-        },
-
-        basicCard: {
-          type: Array,
-          value: function() { return []; }
         },
 
         supportedMethods: {
@@ -60,11 +54,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           value: "shipping"
         },
 
-        payWithGoogle: {
-          type: Object,
-          value: function() { return {}; }
-        },
-
         summaryLabel: {
           type: String,
           value: "Total"
@@ -75,12 +64,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       }}
 
-      buyItems(itemDetails, totalCost) {
+      show(displayItems) {
         let details = {
-          total: { label: this.summaryLabel, amount:
-            { currency: this.currency, value: totalCost.toFixed(2) }
-          },
-          displayItems: itemDetails
+          total: this._getToalFromDisplayItems(displayItems),
+          displayItems: displayItems
         };
 
         // Collect a shipping address, and honor client's other options.
@@ -109,6 +96,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
 
         return request.show()
+      }
+
+      payWithGoogle(displayItems) {
+        let data;
+        let total = this._getToalFromDisplayItems(displayItems);
+        for (let method of this.paymentMethods) {
+          if (method.supportedMethods === 'https://google.com/pay') {
+            data = method.data;
+          }
+        }
+        if (!data ||
+            !data.merchantId ||
+            !data.cardRequirements ||
+            !data.allowedPaymentMethods ||
+            !data.paymentMethodTokenizationParameters) {
+          return Promise.reject('Google Pay not configured.');
+        }
+
+        let paymentsClient = new google.payments.api.PaymentsClient({
+          environment: data.environment || 'TEST'
+        });
+        paymentsClient.isReadyToPay({
+          allowedPaymentMethods: data.allowedPaymentMethods
+        });
+        let paymentDataRequest = {
+          merchantId: data.merchantId,
+          paymentMethodTokenizationParameters: data.paymentMethodTokenizationParameters,
+          allowedPaymentMethods: data.allowedPaymentMethods,
+          cardRequirements: data.cardRequirements
+        };
+        paymentDataRequest.transactionInfo = {
+          totalPriceStatus: 'FINAL',
+          totalPrice: parseFloat(total.amount.value),
+          currencyCode: this.currency
+        };
+        return paymentsClient.loadPaymentData(paymentDataRequest);
       }
 
       _updateShippingAddress(details, addr, resolve) {
@@ -209,52 +232,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         for (let paymentMethods of nodes) {
           methods.push(paymentMethods.getMethod());
         }
-console.log(methods);
         return methods;
       }
 
-      // _computePaymentTypesSupported(basicCards, supportedMethods, payWithGoogle) {
-      //   let paymentTypes = [];
+      _getToalFromDisplayItems(displayItems) {
+        let totalPrice = displayItems.reduce((sum,item) => {
+          return sum + parseFloat(item.amount.value);
+        }, 0);
 
-      //   if (basicCards.length > 0) {
-      //     paymentTypes.push({
-      //       supportedMethods: 'basic-card',
-      //       data: {
-      //         supportedNetworks: basicCards
-      //       }
-      //     });
-      //   }
+        let total = { label: 'Total',
+          amount: { currency: this.currency, value: totalPrice.toFixed(2) }
+        };
 
-      //   if (supportedMethods.length > 0) {
-      //     paymentTypes.push({
-      //       supportedMethods: supportedMethods
-      //     });
-      //   }
-
-      //   if (payWithGoogle && payWithGoogle != {}) {
-      //     paymentTypes.push({
-      //       supportedMethods: 'https://google.com/pay',
-      //       data: payWithGoogle
-      //     });
-      //   }
-
-      //   return paymentTypes;
-      // }
-
-      _computeItemDetails() {
-        let items = [];
-
-        if (this.cart) {
-          for (let entry of this.cart) {
-            let itemCost = entry.quantity * entry.item.price;
-            items.push({
-              label: `${entry.item.title} ${entry.size} x ${entry.quantity}`,
-              amount: {currency: this.currency, value: itemCost.toFixed(2)}
-            });
-          }
-        }
-
-        return items;
+        return total;
       }
 
     };
