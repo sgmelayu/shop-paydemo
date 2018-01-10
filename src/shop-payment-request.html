@@ -110,6 +110,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           shippingType:       this.shippingType
         };
         this.request = new PaymentRequest(this.paymentMethods, this.details, this.options);
+        this.request.addEventListener('shippingoptionchange', e => {
+          e.updateWith(new Promise(resolve => {
+            this._updateShippingOptions(
+              this.details, this.request.shippingOption, resolve);
+          }));
+        });
+        this.request.addEventListener('shippingaddresschange', e => {
+          e.updateWith(new Promise(resolve => {
+            this._updateShippingAddress(
+              this.details, this.request.shippingAddress, resolve);
+          }));
+        });
         this.request.canMakePayment().then(status => {
           this.canMakePaymentRequest = status;
         });
@@ -131,21 +143,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           total: this._getToalFromDisplayItems(displayItems),
           displayItems: displayItems
         };
-
-        // Handle changing shipping options
-        this.request.addEventListener('shippingoptionchange', e => {
-          e.updateWith(new Promise(resolve => {
-            this._updateShippingOptions(details, request.shippingOption, resolve);
-          }));
-        });
-
-        // Handle selecting/changing the shipping address
-        this.request.addEventListener('shippingaddresschange', e => {
-          e.updateWith(new Promise(resolve => {
-            this._updateShippingAddress(details, request.shippingAddress, resolve);
-          }));
-        });
-
         return this.request.show()
       }
 

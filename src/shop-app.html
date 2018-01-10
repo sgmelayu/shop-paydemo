@@ -640,6 +640,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .then(instrument => {
             return this._processPayment(instrument, false);
           }).catch(err => {
+            this.payment.initialize();
             if (err.name === 'AbortError') {
               // Do nothing
             } else if (err.name === 'NotSupportedError') {
@@ -661,6 +662,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .then(instrument => {
             return this._processPayment(instrument, true);
           }).catch(err => {
+            this.payment.initialize();
             if (err.name === 'AbortError') {
               // Do nothing
             } else if (err.name === 'NotSupportedError') {
@@ -681,6 +683,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         .then(instrument => {
           return this._processPayment(instrument, true);
         }).catch(err => {
+          this.payment.initialize();
           if (err.statusCode === 'DEVELOPER_ERROR') {
             console.error('There\'s a configuration error');
             // Do nothing
