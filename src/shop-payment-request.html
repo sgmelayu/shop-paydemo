@@ -20,10 +20,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       static get is() { return 'shop-payment-request' }
 
       static get properties() { return {
-        page: String,
-
-        total: Number,
-
         currency: {
           type: String,
           value: "USD"
@@ -32,6 +28,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         supportedMethods: {
           type: Array,
           value: function() { return []; }
+        },
+
+        request: {
+          type: Object,
+          value: function() { return {}; }
+        },
+
+        details: {
+          type: Object,
+          value: function() { return {}; }
+        },
+
+        options: {
+          type: Object,
+          value: function() { return {}; }
+        },
+
+        canMakePaymentRequest: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+
+        gPayClient: {
+          type: Object,
+          value: function() { return {}; }
+        },
+
+        gPayData: {
+          type: Object,
+          value: function() { return {}; }
+        },
+
+        canMakeGPay: {
+          type: Boolean,
+          value: false,
+          notify: true
         },
 
         requestPayerPhone: {
@@ -64,74 +97,66 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       }}
 
-      show(displayItems) {
-        let details = {
-          total: this._getToalFromDisplayItems(displayItems),
-          displayItems: displayItems
-        };
-
-        // Collect a shipping address, and honor client's other options.
-        let options = {
+      initialize() {
+        this.details = { total: {
+          label: 'Total',
+          amount: { value: '0', currency: this.currency }
+        }};
+        this.options = {
           requestShipping:    true,
           requestPayerEmail:  this.requestPayerEmail,
           requestPayerPhone:  this.requestPayerPhone,
           requestPayerName:   this.requestPayerName,
           shippingType:       this.shippingType
         };
+        this.request = new PaymentRequest(this.paymentMethods, this.details, this.options);
+        this.request.canMakePayment().then(status => {
+          this.canMakePaymentRequest = status;
+        });
 
-        let request = new PaymentRequest(this.paymentMethods, details, options);
+        this.gPayData = this._computeGPayData();
+        this.gPayClient = new google.payments.api.PaymentsClient({
+          environment: this.gPayData.environment || 'TEST'
+        });
+        this.gPayClient.isReadyToPay({
+          allowedPaymentMethods: this.gPayData.allowedPaymentMethods
+        }).then(status => {
+          this.canMakeGPay = status.result;
+          this.gPayClient.prefetchPaymentData(this.gPayData);
+        });
+      }
+
+      show(displayItems) {
+        this.details = {
+          total: this._getToalFromDisplayItems(displayItems),
+          displayItems: displayItems
+        };
 
         // Handle changing shipping options
-        request.addEventListener('shippingoptionchange', e => {
+        this.request.addEventListener('shippingoptionchange', e => {
           e.updateWith(new Promise(resolve => {
             this._updateShippingOptions(details, request.shippingOption, resolve);
           }));
         });
 
         // Handle selecting/changing the shipping address
-        request.addEventListener('shippingaddresschange', e => {
+        this.request.addEventListener('shippingaddresschange', e => {
           e.updateWith(new Promise(resolve => {
             this._updateShippingAddress(details, request.shippingAddress, resolve);
           }));
         });
 
-        return request.show()
+        return this.request.show()
       }
 
       payWithGoogle(displayItems) {
-        let data;
         let total = this._getToalFromDisplayItems(displayItems);
-        for (let method of this.paymentMethods) {
-          if (method.supportedMethods === 'https://google.com/pay') {
-            data = method.data;
-          }
-        }
-        if (!data ||
-            !data.merchantId ||
-            !data.cardRequirements ||
-            !data.allowedPaymentMethods ||
-            !data.paymentMethodTokenizationParameters) {
-          return Promise.reject('Google Pay not configured.');
-        }
-
-        let paymentsClient = new google.payments.api.PaymentsClient({
-          environment: data.environment || 'TEST'
-        });
-        paymentsClient.isReadyToPay({
-          allowedPaymentMethods: data.allowedPaymentMethods
-        });
-        let paymentDataRequest = {
-          merchantId: data.merchantId,
-          paymentMethodTokenizationParameters: data.paymentMethodTokenizationParameters,
-          allowedPaymentMethods: data.allowedPaymentMethods,
-          cardRequirements: data.cardRequirements
-        };
-        paymentDataRequest.transactionInfo = {
+        this.gPayData.transactionInfo = {
           totalPriceStatus: 'FINAL',
           totalPrice: parseFloat(total.amount.value),
           currencyCode: this.currency
         };
-        return paymentsClient.loadPaymentData(paymentDataRequest);
+        return this.gPayClient.loadPaymentData(this.gPayData);
       }
 
       _updateShippingAddress(details, addr, resolve) {
@@ -224,6 +249,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           details.total.amount.value = (currentTotal + shippingCost - oldShippingCost).toFixed(2);
           // Place the shipping price at the end of the line items
           details.displayItems.splice(details.displayItems.length, 0, newShippingOption);
+      }
+
+      _computeGPayData() {
+        let data = {};
+        for (let method of this.paymentMethods) {
+          if (method.supportedMethods === 'https://google.com/pay') {
+            data = method.data;
+          }
+        }
+        if (!data ||
+            !data.merchantId ||
+            !data.cardRequirements ||
+            !data.allowedPaymentMethods ||
+            !data.paymentMethodTokenizationParameters) {
+          console.error('Google Pay not configured properly.');
+          return {};
+        }
+        return data;
       }
 
       _computePaymentMethods() {

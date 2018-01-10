@@ -530,6 +530,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
          */
         response: Object,
 
+        gPayAvailable: Boolean,
+
+        prAvailable: Boolean,
+
         /**
          * If true, the user must enter a billing address.
          */
@@ -572,8 +576,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _proceed(e) {
         let form = this.$.addressForm.querySelector('form');
         if (this._validateForm(form)) {
-          if (window.PaymentRequest) {
-          // if (false) {
+          if (this.gPayAvailable) {
             this._pushState('google-pay');
           } else {
             this._pushState('credit-card');
@@ -643,7 +646,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _googlePaySubmit(e) {
-        this._setWaiting(true);
         this.dispatchEvent(new CustomEvent('buy-google', {
           bubbles: true, composed: true
         }));
