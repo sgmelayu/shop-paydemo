@@ -96,7 +96,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <a href="/cart" on-click="close" id="viewCartAnchor">View Cart</a>
       </shop-button>
       <shop-button class="modal-button">
-        <button on-tap="_buyCart" type="button">Checkout</button>
+        <a href="/checkout" on-click="close">Checkout</a>
       </shop-button>
     </div>
 
@@ -134,13 +134,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _renderClosed() {
         this.classList.remove('opened');
-      }
-
-      _buyCart() {
-        this.dispatchEvent(new CustomEvent('buy-cart', {
-          bubbles: true, composed: true
-        }));
-        this.close();
       }
 
       _onCancel(e) {
