@@ -47,7 +47,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         canMakePaymentRequest: {
           type: Boolean,
-          value: false,
+          // Temporary set `true` to avoid consequent `canMakePayment` call
+          // causing cache to fail evaluating calls after second.
+          value: true,
           notify: true
         },
 
@@ -97,11 +99,62 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       }}
 
-      initialize() {
+      preload() {
         this.details = { total: {
           label: 'Total',
           amount: { value: '0', currency: this.currency }
         }};
+        this.request = new PaymentRequest(this.paymentMethods, this.details);
+        // this.request.canMakePayment().then(status => {
+        //   this.canMakePaymentRequest = status;
+        // });
+
+        this.gPayData = this._computeGPayData();
+        this.gPayClient = new google.payments.api.PaymentsClient({
+          environment: this.gPayData.environment || 'TEST'
+        });
+        this.gPayClient.isReadyToPay({
+          allowedPaymentMethods: this.gPayData.allowedPaymentMethods
+        }).then(status => {
+          this.canMakeGPay = status.result;
+          this.gPayClient.prefetchPaymentData(this.gPayData);
+        });
+      }
+
+      // initialize() {
+      //   this.details = { total: {
+      //     label: 'Total',
+      //     amount: { value: '0', currency: this.currency }
+      //   }};
+      //   this.options = {
+      //     requestShipping:    true,
+      //     requestPayerEmail:  this.requestPayerEmail,
+      //     requestPayerPhone:  this.requestPayerPhone,
+      //     requestPayerName:   this.requestPayerName,
+      //     shippingType:       this.shippingType
+      //   };
+      //   this.request = new PaymentRequest(this.paymentMethods, this.details, this.options);
+      //   this.request.canMakePayment().then(status => {
+      //     this.canMakePaymentRequest = status;
+      //   });
+
+      //   this.gPayData = this._computeGPayData();
+      //   this.gPayClient = new google.payments.api.PaymentsClient({
+      //     environment: this.gPayData.environment || 'TEST'
+      //   });
+      //   this.gPayClient.isReadyToPay({
+      //     allowedPaymentMethods: this.gPayData.allowedPaymentMethods
+      //   }).then(status => {
+      //     this.canMakeGPay = status.result;
+      //     this.gPayClient.prefetchPaymentData(this.gPayData);
+      //   });
+      // }
+
+      show(displayItems) {
+        this.details = {
+          total: this._getToalFromDisplayItems(displayItems),
+          displayItems: displayItems
+        };
         this.options = {
           requestShipping:    true,
           requestPayerEmail:  this.requestPayerEmail,
@@ -122,27 +175,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               this.details, this.request.shippingAddress, resolve);
           }));
         });
-        this.request.canMakePayment().then(status => {
-          this.canMakePaymentRequest = status;
-        });
-
-        this.gPayData = this._computeGPayData();
-        this.gPayClient = new google.payments.api.PaymentsClient({
-          environment: this.gPayData.environment || 'TEST'
-        });
-        this.gPayClient.isReadyToPay({
-          allowedPaymentMethods: this.gPayData.allowedPaymentMethods
-        }).then(status => {
-          this.canMakeGPay = status.result;
-          this.gPayClient.prefetchPaymentData(this.gPayData);
-        });
-      }
-
-      show(displayItems) {
-        this.details = {
-          total: this._getToalFromDisplayItems(displayItems),
-          displayItems: displayItems
-        };
         return this.request.show()
       }
 

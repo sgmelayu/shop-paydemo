@@ -448,7 +448,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // Custom elements polyfill safe way to indicate an element has been upgraded.
         this.removeAttribute('unresolved');
         this.payment = this.$.paymentRequest;
-        this.payment.initialize();
+        this.payment.preload();
         // listen for custom events
         this.addEventListener('add-cart-item', (e)=>this._onAddCartItem(e));
         this.addEventListener('set-cart-item', (e)=>this._onSetCartItem(e));
@@ -640,7 +640,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .then(instrument => {
             return this._processPayment(instrument, false);
           }).catch(err => {
-            this.payment.initialize();
+            this.payment.preload();
             if (err.name === 'AbortError') {
               // Do nothing
             } else if (err.name === 'NotSupportedError') {
@@ -662,7 +662,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .then(instrument => {
             return this._processPayment(instrument, true);
           }).catch(err => {
-            this.payment.initialize();
+            this.payment.preload();
             if (err.name === 'AbortError') {
               // Do nothing
             } else if (err.name === 'NotSupportedError') {
@@ -683,7 +683,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         .then(instrument => {
           return this._processPayment(instrument, true);
         }).catch(err => {
-          this.payment.initialize();
+          this.payment.preload();
           if (err.statusCode === 'DEVELOPER_ERROR') {
             console.error('There\'s a configuration error');
             // Do nothing
@@ -714,7 +714,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           if (instrumentResponse.complete) {
             instrumentResponse.complete('success')
           }
-          this.payment.initialize();
+          this.payment.preload();
           if (cartBuy) {
             this.dispatchEvent(new CustomEvent('clear-cart', {
               bubbles: true, composed: true
