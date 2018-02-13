@@ -11,6 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/app-route/app-route.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/iron-meta/iron-meta.html">
 <link rel="import" href="shop-button.html">
 <link rel="import" href="shop-common-styles.html">
 <link rel="import" href="shop-form-styles.html">
@@ -172,6 +173,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
     <div class="main-frame">
+      <iron-meta id="account" type="account"></iron-meta>
       <iron-pages id="pages" selected="[[state]]" attr-for-selected="state">
         <div state="address">
           <iron-form id="addressForm"
@@ -197,7 +199,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       <input type="text" id="accountName" name="accountName"
                           placeholder="Your Name" autofocus required
                           autocomplete="home name"
-                          aria-labelledby="accountNameLabel accountInfoHeading">
+                          aria-labelledby="accountNameLabel accountInfoHeading"
+                          value="[[accountData.profile.name]]">
                       <shop-md-decorator error-message="Invalid Name" aria-hidden="true">
                         <label id="accountNameLabel">Name</label>
                         <shop-underline></shop-underline>
@@ -209,7 +212,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                       <input type="email" id="accountEmail" name="accountEmail"
                           placeholder="Email" required
                           autocomplete="home email"
-                          aria-labelledby="accountEmailLabel accountInfoHeading">
+                          aria-labelledby="accountEmailLabel accountInfoHeading"
+                          value="[[accountData.profile.email]]">
                       <shop-md-decorator error-message="Invalid Email" aria-hidden="true">
                         <label id="accountEmailLabel">Email</label>
                         <shop-underline></shop-underline>
@@ -696,6 +700,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
           }));
         }
+      }
+
+      ready() {
+        super.ready();
+        this.accountData = this.$.account.byKey('account');
       }
 
       _googlePaySubmit(e) {
