@@ -853,7 +853,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (!visible) {
           return;
         }
-        this._pushState('address');
+        if (this.gPayAvailable) {
+          this._pushState('google-pay');
+        } else {
+          this._pushState('address');
+        }
         // Reset the UI states
         this._reset();
         // Notify the page's title
