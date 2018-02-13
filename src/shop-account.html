@@ -234,12 +234,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           reflectToAttribute: true
         },
 
-        selected: {
-          type: Boolean,
-          reflectToAttribute: true,
-          observer: '_pageChanged'
-        },
-
         _hasAccount: {
           computed: '_computeHasAccount(profile.id)'
         }
@@ -248,46 +242,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       ready() {
         super.ready();
         if (this.$.account.byKey('account')) {
-          this._accountReady();
+          this.accountData = this.$.account.byKey('account');
         } else {
-          window.addEventListener('account-data-ready', (e)=>this._accountReady(e));
+          window.addEventListener('account-data-ready', e => {
+            this.accountData = this.$.account.byKey('account');
+          });
         }
-      }
-
-      _accountReady() {
-        this.accountData = this.$.account.byKey('account');
-        this.accountData.addEventListener('googleyolo-failed', e => {
-          if (e.detail.type === 'signin' &&
-              e.detail.error.type === 'noCredentialsAvailable') {
-            this._offerSignUp();
-          }
-        });
-      }
-
-      _pageChanged(thisPage) {
-        this.accountData = this.$.account.byKey('account');
-        if (thisPage && this.accountData && !this.accountData.isSignedIn()) {
-          this._offerSignUp();
-        } else if (!thisPage) {
-          this.accountData.dismissYoloDialog(); 
-        }
-      }
-
-      _offerSignUp() {
-        return this.accountData.signUp()
-        .then(profile => {
-          if (profile) {
-            this.dispatchEvent(new CustomEvent('show-snackbar', {
-              bubbles: true, composed: true, detail: {
-                text: 'Thanks for signing up!'
-              }
-            }));
-          } else {
-            return Promise.reject('no accounts obtained.');
-          }
-        }).catch(err => {
-          console.info(err.message);
-        });
       }
 
       _computeHasAccount(id) {

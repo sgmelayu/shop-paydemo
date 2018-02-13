@@ -33,7 +33,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           value: null,
           notify: true
         },
-        googleSigninClientId: String
+        googleSigninClientId: String,
+        page: {
+          type: String,
+          value: '',
+          observer: '_pageChanged'
+        }
       }}
 
       ready() {
@@ -74,7 +79,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         };
       }
 
-      autoSignIn() {
+      autoSignIn(autoSignIn) {
         this.dispatchEvent(new CustomEvent('googleyolo-displayed', {
           bubbles: true, composed: true
         }));
@@ -83,7 +88,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           supportedIdTokenProviders: [{
             uri: AUTH_GOOGLE,
             clientId: this.googleSigninClientId
-          }]
+          }],
+          autoSignIn: autoSignIn ? 'required' : 'enabled'
         }).then(cred => {
           if (!cred) {
             return Promise.reject();
@@ -243,18 +249,46 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       dismissYoloDialog() {
-        googleyolo.cancelLastOperation();
+        if ('googleyolo' in window) {
+          googleyolo.cancelLastOperation();
+        }
       }
 
       logout() {
         return this._fetch(SIGNOUT)
         .then(() => {
           googleyolo.disableAutoSignIn();
-          navigator.credentials.preventSilentAccess();
           this._initializeProfile();
         });
       }
 
+      _pageChanged(page) {
+        if (!('googleyolo' in window) || (page !== 'cart' &&
+            page !== 'account')) {
+          this.dismissYoloDialog();
+          return;
+        }
+
+        if (!this.isSignedIn()) {
+          this.signUp().then(profile => {
+            if (profile) {
+              this.dispatchEvent(new CustomEvent('show-snackbar', {
+                bubbles: true, composed: true, detail: {
+                  text: 'Thanks for signing up!'
+                }
+              }));
+            }
+          }).catch(e => {
+            if (e.type !== 'userCanceled') {
+              this.dispatchEvent(new CustomEvent('show-snackbar', {
+                bubbles: true, composed: true, detail: {
+                  text: 'Failed to sign up'
+                }
+              }));
+            }
+          })
+        }
+      }
     };
 
     customElements.define(ShopGoogleyolo.is, ShopGoogleyolo);
