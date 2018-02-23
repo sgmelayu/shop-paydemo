@@ -459,7 +459,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.addEventListener('dom-change', (e)=>this._domChange(e));
         this.addEventListener('show-invalid-url-warning', (e)=>this._onFallbackSelectionTriggered(e));
         this.addEventListener('show-snackbar', (e)=>this._showSnackbar(e));
-        this.addEventListener('buy-item', (e)=>this._onBuyItem(e));
+        this.addEventListener('buy-item', (e)=>this._onBuyItemWithGoogle(e));
         this.addEventListener('buy-cart', (e)=>this._onBuyCart(e));
         this.addEventListener('buy-google', (e)=>this._onBuyGoogle(e));
         this.addEventListener('process-payment', (e)=>this._processPayment(e));
@@ -676,6 +676,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this._redirectToCheckout();
           return;
         }
+      }
+
+      _onBuyItemWithGoogle(event) {
+        let displayItems = this._getDisplayItemsFromItem(event.detail);
+        this.payment.payWithGoogle(displayItems)
+        .then(instrument => {
+          return this._processPayment(instrument, true);
+        }).catch(err => {
+          this.payment.preload();
+          if (err.statusCode === 'DEVELOPER_ERROR') {
+            console.error('There\'s a configuration error');
+            // Do nothing
+          } else if (err.statusCode === 'CANCELED') {
+            this._announce('Payment cancelled.');
+          }
+        });
       }
 
       _onBuyGoogle() {
