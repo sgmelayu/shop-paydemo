@@ -19,6 +19,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../bower_components/iron-meta/iron-meta.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="shop-developer.html">
 <link rel="import" href="shop-category-data.html">
 <link rel="import" href="shop-payment-request.html">
 <link rel="import" href="shop-payment-method.html">
@@ -243,6 +244,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <iron-media-query query="max-width: 767px" query-matches="{{smallScreen}}"></iron-media-query>
     <iron-meta id="meta" type="account"></iron-meta>
 
+    <shop-developer id="developerDialog"></shop-developer>
+
     <!--
       shop-category-data provides the list of categories.
     -->
@@ -311,7 +314,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-icon-button icon="arrow-back" aria-label="Go back"></paper-icon-button>
           </a>
         </div>
-        <div class="left-bar-item"></div>
+        <div class="left-bar-item">
+          <a on-tap="_openDeveloperDialog">
+            <paper-icon-button
+              aria-label="Developer"></paper-icon-button>
+          </a>
+        </div>
         <div class="logo" main-title><a href="/" aria-label="SHOP Home">SHOP</a></div>
         <div class="account-btn-container">
           <a href="/account" tabindex="-1">
@@ -464,6 +472,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.addEventListener('buy-google', (e)=>this._onBuyGoogle(e));
         this.addEventListener('process-payment', (e)=>this._processPayment(e));
         this.addEventListener('logout', (e)=>this._onLogout(e));
+        this.addEventListener('load-payment-data', (e)=>this._onLoadPaymentData(e));
         // listen for online/offline
         Polymer.RenderStatus.afterNextRender(this, () => {
           window.addEventListener('online', (e)=>this._notifyNetworkStatus(e));
@@ -858,6 +867,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         } else {
           return 'account-circle';
         }
+      }
+
+      _openDeveloperDialog() {
+        let displayItems = this._getDisplayItemsFromCart();
+        let data = this.payment.getGPayData(displayItems);
+        this.$.developerDialog.setEditorValue(data);
+        this.$.developerDialog.open();
+      }
+
+      _onLoadPaymentData() {
+        this.payment.loadPaymentData(this.$.developerDialog.getEditorValue())
+        .then(instrument => {
+          this.$.developerDialog.setResponseValue(instrument);
+        })
+        .catch(err => {
+          this.$.developerDialog.setResponseValue(err);
+        });
       }
     }
 

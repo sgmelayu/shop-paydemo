@@ -188,6 +188,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return this.gPayClient.loadPaymentData(this.gPayData);
       }
 
+      loadPaymentData(data) {
+        return this.gPayClient.loadPaymentData(data);
+      }
+
+      getGPayData(displayItems) {
+        let total = this._getToalFromDisplayItems(displayItems);
+        this.gPayData.transactionInfo = {
+          totalPriceStatus: 'FINAL',
+          totalPrice: parseFloat(total.amount.value),
+          currencyCode: this.currency
+        };
+        return this.gPayData;
+      }
+
       _updateShippingAddress(details, addr, resolve) {
         // If there's no shipping options for the address, it will be rejected on an empty array
         details.shippingOptions = [];

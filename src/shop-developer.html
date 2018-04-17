@@ -1,0 +1,114 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/ace-widget/ace-widget.html">
+<link rel="import" href="shop-button.html">
+<link rel="import" href="shop-checkout.html">
+<link rel="import" href="shop-common-styles.html">
+
+<dom-module id="shop-developer">
+
+  <template>
+
+    <style include="shop-common-styles shop-button shop-checkout">
+
+      @media (max-width: 600px) {
+        paper-dialog {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          margin: 0;
+        }
+      }
+
+      @media (min-width: 601px) {
+        paper-dialog {
+            width: calc(100% - 20px);
+            max-width: 1000px;
+            height: calc(100% - 20px);
+            max-height: 1000px;
+        }
+      }
+
+      #buttonRow {
+        justify-content: center;
+        margin: 10px;
+      }
+
+    </style>
+
+    <paper-dialog id="dialog">
+      <div>
+        <h2>Developer Console</h2>
+        <ace-widget
+          id="aceWidget"
+          mode="ace/mode/json"
+          theme="ace/theme/monokai"
+          initialFocus></ace-widget>
+        <div class="row" id="buttonRow">
+          <button
+            class="googlepay"
+            on-tap="_loadPaymentData"
+            title="Buy with Google Pay"></button>
+        </div>
+        <div id="response">
+          <h3>Response</h3>
+          <ace-widget
+            id="aceWidgetResponse"
+            mode="ace/mode/json"
+            theme="ace/theme/solarized_light"
+            readonly
+            maxLines=10></ace-widget>
+        </div>
+      </div>
+    </paper-dialog>
+
+  </template>
+
+  <script>
+
+    class ShopDeveloper extends Polymer.Element {
+
+      static get is() { return 'shop-developer'; }
+
+      open() {
+        this.$.aceWidgetResponse.editor.renderer.setShowGutter(false);
+        this.$.dialog.open();
+      }
+
+      getEditorValue() {
+        return JSON.parse(this.$.aceWidget.editor.getValue());
+      }
+
+      setEditorValue(obj) {
+        this.$.aceWidget.editor.setValue(JSON.stringify(obj, null, '\t'));
+      }
+
+      setResponseValue(obj) {
+        this.$.aceWidgetResponse.editor.setValue(JSON.stringify(obj, null, '\t'));
+      }
+
+      _loadPaymentData() {
+        this.dispatchEvent(new CustomEvent('load-payment-data', {
+          bubbles: true, composed: true
+        }));
+      }
+
+    }
+
+    customElements.define(ShopDeveloper.is, ShopDeveloper);
+
+  </script>
+
+</dom-module>
