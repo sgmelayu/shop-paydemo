@@ -213,10 +213,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <p id="desc"></p>
         </div>
         <div id="buyButtons">
-          <shop-button responsive id="addToCart" half-size$="[[_hasPaymentRequest()]]">
+          <shop-button responsive id="addToCart" half-size$="[[_hasGpay()]]">
             <button on-tap="_addToCart" aria-label="Add this item to cart">Add to Cart</button>
           </shop-button>
-          <shop-button responsive id="buyNow" visible$="[[_hasPaymentRequest()]]">
+          <shop-button responsive id="buyNow" visible$="[[_hasGpay()]]">
             <button on-tap="_buyNow" aria-label="Buy this item now">Buy Now</button>
           </shop-button>
         </div>
@@ -258,7 +258,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           observer: '_offlineChanged'
         },
 
-        failure: Boolean
+        failure: Boolean,
+
+        gPayAvailable: Boolean
 
       }}
 
@@ -332,6 +334,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (!offline) {
           this._tryReconnect();
         }
+      }
+
+      _hasGpay() {
+        return this.gPayAvailable;
       }
 
       _hasPaymentRequest() {
