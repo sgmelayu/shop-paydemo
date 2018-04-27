@@ -100,15 +100,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }}
 
       preload() {
-        this.details = { total: {
-          label: 'Total',
-          amount: { value: '0', currency: this.currency }
-        }};
-        this.request = new PaymentRequest(this.paymentMethods, this.details);
-        // this.request.canMakePayment().then(status => {
-        //   this.canMakePaymentRequest = status;
-        // });
-
         this.gPayData = this._computeGPayData();
         this.gPayClient = new google.payments.api.PaymentsClient({
           environment: this.gPayData.environment || 'TEST'
@@ -120,35 +111,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.gPayClient.prefetchPaymentData(this.gPayData);
         });
       }
-
-      // initialize() {
-      //   this.details = { total: {
-      //     label: 'Total',
-      //     amount: { value: '0', currency: this.currency }
-      //   }};
-      //   this.options = {
-      //     requestShipping:    true,
-      //     requestPayerEmail:  this.requestPayerEmail,
-      //     requestPayerPhone:  this.requestPayerPhone,
-      //     requestPayerName:   this.requestPayerName,
-      //     shippingType:       this.shippingType
-      //   };
-      //   this.request = new PaymentRequest(this.paymentMethods, this.details, this.options);
-      //   this.request.canMakePayment().then(status => {
-      //     this.canMakePaymentRequest = status;
-      //   });
-
-      //   this.gPayData = this._computeGPayData();
-      //   this.gPayClient = new google.payments.api.PaymentsClient({
-      //     environment: this.gPayData.environment || 'TEST'
-      //   });
-      //   this.gPayClient.isReadyToPay({
-      //     allowedPaymentMethods: this.gPayData.allowedPaymentMethods
-      //   }).then(status => {
-      //     this.canMakeGPay = status.result;
-      //     this.gPayClient.prefetchPaymentData(this.gPayData);
-      //   });
-      // }
 
       show(displayItems) {
         this.details = {
@@ -277,21 +239,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // Updates the total order cost to include shipping
       // If shipping has already been added, it must be subtracted and the line item removed
       _updateTotal(details, newShippingOption, oldShippingOption) {
-          let oldShippingCost = 0;
-          if (oldShippingOption) {
-            // Remove from the line items; it should be on the end
-            // TODO: explicitly remove the item by its id?
-            details.displayItems.pop();
+        let oldShippingCost = 0;
+        if (oldShippingOption) {
+          // Remove from the line items; it should be on the end
+          // TODO: explicitly remove the item by its id?
+          details.displayItems.pop();
 
-            // Deduct the cost of the old shipping
-            oldShippingCost = Number(oldShippingOption.amount.value);
-          }
+          // Deduct the cost of the old shipping
+          oldShippingCost = Number(oldShippingOption.amount.value);
+        }
 
-          var shippingCost = Number(newShippingOption.amount.value);
-          var currentTotal = Number(details.total.amount.value);
-          details.total.amount.value = (currentTotal + shippingCost - oldShippingCost).toFixed(2);
-          // Place the shipping price at the end of the line items
-          details.displayItems.splice(details.displayItems.length, 0, newShippingOption);
+        var shippingCost = Number(newShippingOption.amount.value);
+        var currentTotal = Number(details.total.amount.value);
+        details.total.amount.value = (currentTotal + shippingCost - oldShippingCost).toFixed(2);
+        // Place the shipping price at the end of the line items
+        details.displayItems.splice(details.displayItems.length, 0, newShippingOption);
       }
 
       _computeGPayData() {
@@ -309,6 +271,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           console.error('Google Pay not configured properly.');
           return {};
         }
+        data.transactionInfo = {
+          totalPriceStatus: 'NOT_CURRENTLY_KNOWN',
+          currencyCode: this.currency
+        };
         return data;
       }
 
