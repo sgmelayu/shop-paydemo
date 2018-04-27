@@ -213,11 +213,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <p id="desc"></p>
         </div>
         <div id="buyButtons">
-          <shop-button responsive id="addToCart" half-size$="[[_hasGpay()]]">
-            <button on-tap="_addToCart" aria-label="Add this item to cart">Add to Cart</button>
+          <shop-button responsive id="addToCart" half-size$="[[_hasGpay()]]" style="width: 100%;">
+            <button on-tap="_addToCart" aria-label="Add this item to cart" >Add to Cart</button>
           </shop-button>
-          <div responsive id="buyNow" visible$="[[_hasPaymentRequest()]]" style="display:inline-block;">
-<button style="background-color:#000;background-image:url('https://www.gstatic.com/instantbuy/svg/dark_long_gpay.svg');background-origin:content-box;background-position:center;background-repeat:no-repeat;background-size:contain;border:0;border-radius:4px;box-shadow:0 1px 1px 0 #3c40434D, 0 1px 3px 1px #3c404326;cursor:pointer;height:40px;min-height:40px;min-width:120px;outline:0;padding:11px 24px;width:200px;"  on-tap="_buyNow"></button>
+          <div responsive id="buyNow" visible$="[[_hasPaymentRequest()]]">
+<button style="background-color:#000;background-image:url('https://www.gstatic.com/instantbuy/svg/dark_long_gpay.svg');background-origin:content-box;background-position:center;background-repeat:no-repeat;background-size:contain;border:0;border-radius:4px;box-shadow:0 1px 1px 0 #3c40434D, 0 1px 3px 1px #3c404326;cursor:pointer;height:40px;min-height:40px;min-width:120px;outline:0;padding:11px 24px;width:100%"  on-tap="_buyNow"></button>
         </div>
       </div>
     </div>

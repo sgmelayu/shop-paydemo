@@ -46,6 +46,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin: 10px;
       }
 
+      #aceWidgetResponse, #aceWidget {
+        width: 100%;
+        height: 100%;
+
+      }
+
     </style>
 
     <paper-dialog id="dialog">
@@ -65,8 +71,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             id="aceWidgetResponse"
             mode="ace/mode/json"
             theme="ace/theme/solarized_light"
-            readonly
-            maxLines=10></ace-widget>
+            readonly></ace-widget>
         </div>
       </div>
     </paper-dialog>
@@ -89,17 +94,41 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       setEditorValue(obj) {
+        this._filterOutFields(obj);
         this.$.aceWidget.editor.setValue(JSON.stringify(obj, null, '\t'));
+        this.$.aceWidget.editor.resize();
+        this.$.dialog.refit();
       }
 
       setResponseValue(obj) {
         this.$.aceWidgetResponse.editor.setValue(JSON.stringify(obj, null, '\t'));
+        this.$.aceWidgetResponse.editor.resize();
+        this.$.dialog.refit();
       }
 
       _loadPaymentData() {
         this.dispatchEvent(new CustomEvent('load-payment-data', {
           bubbles: true, composed: true
         }));
+      }
+
+      _filterOutFields(obj) {
+        if (obj['cardRequirements']) {
+          if (obj['cardRequirements']['billingAddressFormat']) {
+            delete obj['cardRequirements']['billingAddressFormat'];
+          }
+          if (obj['cardRequirements']['billingAddressRequired']) {
+            delete obj['cardRequirements']['billingAddressRequired'];
+          }
+        }
+
+        if (obj['transactionInfo'] && !obj['transactionInfo']['totalPrice']) {
+          obj['transactionInfo']['totalPrice'] = 123;
+        }
+
+        if (obj['i']) {
+          delete obj['i'];
+        }
       }
 
     }
