@@ -18,6 +18,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="shop-input.html">
 <link rel="import" href="shop-select.html">
 <link rel="import" href="shop-checkbox.html">
+<link rel="import" href="shop-google-pay-button.html">
 
 <dom-module id="shop-checkout">
 
@@ -500,10 +501,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <div>[[_formatPrice(total)]]</div>
             </div>
             <div class="proceed-box">
-              <button
-                class="googlepay"
-                on-tap="_googlePaySubmit"
-                title="Buy with Google Pay"></button>
+              <button style="background-color:#000;background-image:url('https://www.gstatic.com/instantbuy/svg/dark_long_gpay.svg');background-origin:content-box;background-position:center;background-repeat:no-repeat;background-size:contain;border:0;border-radius:4px;box-shadow:0 1px 1px 0 #3c40434D, 0 1px 3px 1px #3c404326;cursor:pointer;height:40px;min-height:40px;min-width:120px;outline:0;padding:11px 24px;width:240px;" on-tap="_googlePaySubmit"></button>
             </div>
             <!-- <div class="pay-with-google proceed-box" on-tap="_googlePaySubmit">
               <image src="/images/pay_with_google.png" />

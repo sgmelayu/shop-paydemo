@@ -16,6 +16,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="shop-common-styles.html">
 <link rel="import" href="shop-image.html">
 <link rel="import" href="shop-select.html">
+<link rel="import" href="shop-google-pay-button.html">
 
 <dom-module id="shop-detail">
 
@@ -216,8 +217,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <shop-button responsive id="addToCart" half-size$="[[_hasPaymentRequest()]]">
             <button on-tap="_addToCart" aria-label="Add this item to cart">Add to Cart</button>
           </shop-button>
-          <shop-button responsive id="buyNow" visible$="[[_hasPaymentRequest()]]">
-            <button on-tap="_buyNow" aria-label="Buy this item now">Buy Now</button>
+          <div responsive id="buyNow" visible$="[[_hasPaymentRequest()]]" style="display:inline-block;">
+<button style="background-color:#000;background-image:url('https://www.gstatic.com/instantbuy/svg/dark_long_gpay.svg');background-origin:content-box;background-position:center;background-repeat:no-repeat;background-size:contain;border:0;border-radius:4px;box-shadow:0 1px 1px 0 #3c40434D, 0 1px 3px 1px #3c404326;cursor:pointer;height:40px;min-height:40px;min-width:120px;outline:0;padding:11px 24px;width:200px;"  on-tap="_buyNow"></button>
           </shop-button>
         </div>
       </div>
