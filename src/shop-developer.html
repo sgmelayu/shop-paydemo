@@ -126,6 +126,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           obj['transactionInfo']['totalPrice'] = 123;
         }
 
+        if (obj['phoneNumberRequired']) {
+          delete obj['phoneNumberRequired'];
+        }
+
         if (obj['i']) {
           delete obj['i'];
         }
