@@ -749,17 +749,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }));
           }
           // Proceed to sign-in if the user is not signed up
-          if (!this.accountData || !this.accountData.isSignedIn()) {
-            this.userEmail = instrumentResponse.payerEmail;
-            this.set('route.path', '/account/signup');
-          } else {
-            if (!this._orderSuccessModal) {
-              this._orderSuccessModal = document.createElement('shop-order-success-modal');
-              this.root.appendChild(this._orderSuccessModal);
-            }
-            this._orderSuccessModal.open();
-            this._announce('Order processed successfully!');
-          }
+          this.userEmail = instrumentResponse.payerEmail;
+          this.set('route.path', '/account/signup');
         }, 500);
       }
 

@@ -143,11 +143,37 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       payWithGoogle(displayItems) {
         let total = this._getToalFromDisplayItems(displayItems);
         this.gPayData.transactionInfo = {
-          totalPriceStatus: 'FINAL',
+          totalPriceStatus: 'ESTIMATED',
           totalPrice: parseFloat(total.amount.value),
           currencyCode: this.currency
         };
-        return this.gPayClient.loadPaymentData(this.gPayData);
+        if (navigator.userAgent.indexOf("Chrome") > 0 &&
+            'PaymentRequest' in window &&
+            location.search.indexOf('paymenthandler=true') >= 0) {
+          // Create payment request in Chrome to trigger payment handler5
+          return this.showPaymentHandler(this.gPayData);
+        } else {
+          return this.gPayClient.loadPaymentData(this.gPayData);
+        }
+      }
+
+      showPaymentHandler(data) {
+        data['environment'] = 'TEST';
+        data['i'] = {
+          'googleTransactionId': 'testingPaymentHandler'
+        };
+        return new PaymentRequest([{
+            supportedMethods: ['https://google.com/pay'],
+            data: data,
+          }], {
+            total: {
+              label: 'Estimated Total Price',
+              amount: {
+                currency: this.currency,
+                value: data.transactionInfo.totalPrice + "",
+              }
+            }
+          }).show();
       }
 
       loadPaymentData(data) {
@@ -157,7 +183,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       getGPayData(displayItems) {
         let total = this._getToalFromDisplayItems(displayItems);
         this.gPayData.transactionInfo = {
-          totalPriceStatus: 'FINAL',
+          totalPriceStatus: 'ESTIMATED',
           totalPrice: parseFloat(total.amount.value),
           currencyCode: this.currency
         };

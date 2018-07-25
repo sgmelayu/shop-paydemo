@@ -25,7 +25,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     class ShopGoogleyolo extends Polymer.Element {
 
-      static get is() { return 'shop-googleyolo' } 
+      static get is() { return 'shop-googleyolo' }
 
       static get properties() { return {
         profile: {
@@ -88,8 +88,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           supportedIdTokenProviders: [{
             uri: AUTH_GOOGLE,
             clientId: this.googleSigninClientId
-          }],
-          autoSignIn: autoSignIn ? 'required' : 'enabled'
+          }]
         }).then(cred => {
           if (!cred) {
             return Promise.reject();
