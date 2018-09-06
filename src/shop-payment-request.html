@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="shop-payment-method.html">
-<script src="https://pay.google.com/gp/p/js/pay.js"></script>
+<script async src="https://pay.google.com/gp/p/js/pay.js"></script>
 
 <dom-module id="shop-payment-request">
   <script>
@@ -105,7 +105,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           environment: this.gPayData.environment || 'TEST'
         });
         this.gPayClient.isReadyToPay({
-          allowedPaymentMethods: this.gPayData.allowedPaymentMethods
+          apiVersion: 2,
+          apiVersionMinor: 0,
+          allowedPaymentMethods: [
+            {
+              type: "CARD",
+              parameters: {
+                allowedCardNetworks: ['AMEX', 'DISCOVER', 'VISA', 'MASTERCARD'],
+                allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS']
+              }
+            }
+          ]
         }).then(status => {
           this.canMakeGPay = status.result;
           this.gPayClient.prefetchPaymentData(this.gPayData);
@@ -144,7 +154,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         let total = this._getToalFromDisplayItems(displayItems);
         this.gPayData.transactionInfo = {
           totalPriceStatus: 'ESTIMATED',
-          totalPrice: parseFloat(total.amount.value),
+          totalPrice: parseFloat(total.amount.value).toString(),
           currencyCode: this.currency
         };
         if (navigator.userAgent.indexOf("Chrome") > 0 &&
@@ -184,7 +194,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         let total = this._getToalFromDisplayItems(displayItems);
         this.gPayData.transactionInfo = {
           totalPriceStatus: 'ESTIMATED',
-          totalPrice: parseFloat(total.amount.value),
+          totalPrice: parseFloat(total.amount.value).toString(),
           currencyCode: this.currency
         };
         return this.gPayData;
@@ -290,10 +300,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         }
         if (!data ||
-            !data.merchantId ||
-            !data.cardRequirements ||
+            !data.merchantInfo ||
             !data.allowedPaymentMethods ||
-            !data.paymentMethodTokenizationParameters) {
+            !data.allowedPaymentMethods[0].tokenizationSpecification) {
           console.error('Google Pay not configured properly.');
           return {};
         }
@@ -319,7 +328,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }, 0);
 
         let total = { label: 'Total',
-          amount: { currency: this.currency, value: totalPrice.toFixed(2) }
+          amount: {
+            currency: this.currency,
+            value: totalPrice.toFixed(2).toString()
+          }
         };
 
         return total;
