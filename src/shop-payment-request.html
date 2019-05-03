@@ -102,7 +102,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       preload() {
         this.gPayData = this._computeGPayData();
         this.gPayClient = new google.payments.api.PaymentsClient({
-          environment: this.gPayData.environment || 'TEST'
+          environment: this.gPayData.environment || 'TEST',
+          paymentDataCallback: this._onGPayPaymentDataCallback.bind(this)
         });
         this.gPayClient.isReadyToPay({
           apiVersion: 2,
@@ -151,12 +152,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       payWithGoogle(displayItems) {
+        this._lastDisplayItems = displayItems;
         let total = this._getToalFromDisplayItems(displayItems);
         this.gPayData.transactionInfo = {
           totalPriceStatus: 'ESTIMATED',
-          totalPrice: parseFloat(total.amount.value).toString(),
+          totalPrice: (parseFloat(total.amount.value) + 10).toString(),
+          totalPriceLabel: 'Total',
           currencyCode: this.currency
         };
+        let gpDisplayItems = this._getGPayDisplayItems(displayItems);
+        gpDisplayItems.push({'label': 'Shipping', 'type': 'LINE_ITEM', 'price': '10'});
+        this.gPayData.transactionInfo.displayItems = gpDisplayItems;
+        this.gPayData.callbackIntents = ['SHIPPING_ADDRESS', 'SHIPPING_OPTION'];
+
+
         if (navigator.userAgent.indexOf("Chrome") > 0 &&
             'PaymentRequest' in window &&
             location.search.indexOf('paymenthandler=true') >= 0) {
@@ -198,6 +207,90 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           currencyCode: this.currency
         };
         return this.gPayData;
+      }
+
+      _getGPayShippingOption() {
+        let shippingOptionParameters = {};
+        let shippingOption1 = {
+            'id': 'standard',
+            'label': '$10 Standard shipping',
+            'description': "5 business days"
+          };
+
+        // Express shipping worldwide for $20
+        let shippingOption2 = {
+          'id': 'global_express',
+          'label': '$20 Express shipping',
+          'description': "2 business days"
+        };
+        shippingOptionParameters.shippingOptions = [shippingOption1, shippingOption2];
+        // shippingOptionParameters.defaultSelectedOptionId = "standard";
+        return shippingOptionParameters;
+      }
+
+      _getGPayCaShippingOption() {
+        let shippingOptionParameters = {};
+        let shippingOption1 = {
+            'id': 'ca',
+            'label': 'Free shipping in California',
+            'description': "2 business days"
+          };
+
+        // Express shipping worldwide for $20
+        let shippingOption2 = {
+          'id': 'ca_express',
+          'label': '$5 Express shipping in California',
+          'description': "1 business days"
+        };
+        shippingOptionParameters.shippingOptions = [shippingOption1, shippingOption2];
+        // shippingOptionParameters.defaultSelectedOptionId = "ca";
+        return shippingOptionParameters;
+      }
+
+      _getGPayDisplayItems(displayItems) {
+        return displayItems.map(displayItem =>
+                                {
+          return {'label': displayItem.label, 'type': 'LINE_ITEM', 'price': displayItem.amount.value};
+        });
+      }
+
+      _onGPayPaymentDataCallback(data) {
+        let paymentRequestUpdate = {};
+        // Handle shipping update
+        if (data.shippingAddress.administrativeArea == 'CA') {
+          if (data.shippingOptionData.id != 'ca' && data.shippingOptionData.id != 'ca_express') {
+            paymentRequestUpdate.newShippingOptionParameters = this._getGPayCaShippingOption();
+            data.shippingOptionData.id = 'ca';
+          }
+        } else {
+          if (data.shippingOptionData.id != 'standard' && data.shippingOptionData.id != 'global_express') {
+            paymentRequestUpdate.newShippingOptionParameters = this._getGPayShippingOption();
+            data.shippingOptionData.id = 'standard';
+          }
+        }
+
+        let shippingPrice = 0;
+        if (data.shippingOptionData.id == 'ca_express') {
+          shippingPrice = 5;
+        } else if (data.shippingOptionData.id == 'standard') {
+          shippingPrice = 10;
+        } else if (data.shippingOptionData.id == 'global_express') {
+          shippingPrice = 20;
+        }
+
+        // Handle shipping option update
+        let total = this._getToalFromDisplayItems(this._lastDisplayItems);
+        let transactionInfo = {
+          totalPriceStatus: 'ESTIMATED',
+          totalPrice: (parseFloat(total.amount.value) + shippingPrice).toString(),
+          totalPriceLabel: 'Total',
+          currencyCode: this.currency
+        };
+        let gpDisplayItems = this._getGPayDisplayItems(this._lastDisplayItems);
+        gpDisplayItems.push({'label': 'Shipping', 'type': 'LINE_ITEM', 'price': shippingPrice.toString()});
+        transactionInfo.displayItems = gpDisplayItems;
+        paymentRequestUpdate.newTransactionInfo = transactionInfo;
+        return paymentRequestUpdate;
       }
 
       _updateShippingAddress(details, addr, resolve) {
@@ -310,6 +403,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           totalPriceStatus: 'NOT_CURRENTLY_KNOWN',
           currencyCode: this.currency
         };
+        data.shippingAddressParameters = {'phoneNumberRequired': false};
+        data.shippingOptionParameters = this._getGPayShippingOption();
         return data;
       }
 
@@ -344,3 +439,4 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </script>
 
 </dom-module>
+
