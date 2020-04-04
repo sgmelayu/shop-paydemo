@@ -404,6 +404,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           currencyCode: this.currency
         };
         data.shippingAddressParameters = {'phoneNumberRequired': false};
+        data.shippingAddressRequired = true;
+        data.shippingOptionRequired = true;
         data.shippingOptionParameters = this._getGPayShippingOption();
         return data;
       }
