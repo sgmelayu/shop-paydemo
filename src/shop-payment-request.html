@@ -103,7 +103,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.gPayData = this._computeGPayData();
         this.gPayClient = new google.payments.api.PaymentsClient({
           environment: this.gPayData.environment || 'TEST',
-          paymentDataCallback: this._onGPayPaymentDataCallback.bind(this)
+          paymentDataCallbacks: {
+            onPaymentDataChanged: this._onGPayPaymentDataCallback.bind(this)
+          }
         });
         this.gPayClient.isReadyToPay({
           apiVersion: 2,
